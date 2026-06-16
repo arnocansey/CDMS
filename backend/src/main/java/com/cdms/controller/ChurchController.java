@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
@@ -78,22 +79,23 @@ public class ChurchController {
                 .limit(5)
                 .collect(Collectors.toList());
 
+        Map<String, Object> churchMap = new HashMap<>();
+        churchMap.put("id", church.getId());
+        churchMap.put("name", church.getName());
+        churchMap.put("slug", church.getSlug());
+        churchMap.put("email", church.getEmail() != null ? church.getEmail() : "");
+        churchMap.put("phone", church.getPhone() != null ? church.getPhone() : "");
+        churchMap.put("address", church.getAddress() != null ? church.getAddress() : "");
+        churchMap.put("city", church.getCity() != null ? church.getCity() : "");
+        churchMap.put("state", church.getState() != null ? church.getState() : "");
+        churchMap.put("zipCode", church.getZipCode() != null ? church.getZipCode() : "");
+        churchMap.put("website", church.getWebsite() != null ? church.getWebsite() : "");
+        churchMap.put("logoUrl", church.getLogoUrl() != null ? church.getLogoUrl() : "");
+        churchMap.put("primaryColor", church.getPrimaryColor());
+        churchMap.put("secondaryColor", church.getSecondaryColor());
+
         return ResponseEntity.ok(Map.of(
-                "church", Map.of(
-                        "id", church.getId(),
-                        "name", church.getName(),
-                        "slug", church.getSlug(),
-                        "email", church.getEmail() != null ? church.getEmail() : "",
-                        "phone", church.getPhone() != null ? church.getPhone() : "",
-                        "address", church.getAddress() != null ? church.getAddress() : "",
-                        "city", church.getCity() != null ? church.getCity() : "",
-                        "state", church.getState() != null ? church.getState() : "",
-                        "zipCode", church.getZipCode() != null ? church.getZipCode() : "",
-                        "website", church.getWebsite() != null ? church.getWebsite() : "",
-                        "logoUrl", church.getLogoUrl() != null ? church.getLogoUrl() : "",
-                        "primaryColor", church.getPrimaryColor(),
-                        "secondaryColor", church.getSecondaryColor()
-                ),
+                "church", churchMap,
                 "memberCount", memberCount,
                 "upcomingEvents", upcomingEvents.stream().map(e -> Map.of(
                         "id", e.getId(),
