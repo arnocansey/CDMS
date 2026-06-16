@@ -1,0 +1,22 @@
+CREATE TABLE visitors (
+    id BIGSERIAL PRIMARY KEY,
+    church_id BIGINT NOT NULL DEFAULT 1,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    address TEXT,
+    visit_date DATE NOT NULL,
+    first_visit_date DATE,
+    visit_count INTEGER NOT NULL DEFAULT 1,
+    status VARCHAR(20) NOT NULL DEFAULT 'FIRST_TIME',
+    referred_by VARCHAR(255),
+    notes TEXT,
+    interested_in_membership BOOLEAN NOT NULL DEFAULT FALSE,
+    follow_up_status VARCHAR(20) NOT NULL DEFAULT 'NONE',
+    follow_up_date DATE,
+    follow_up_notes TEXT,
+    created_by VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,0 +1,215 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+import { branding } from "@/lib/branding";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { toast } from "sonner";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
+import { Eye, EyeOff, Church, ArrowRight, Mail, Lock } from "lucide-react";
+
+export default function LoginPage() {
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
+  const router = useRouter();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
+    setError("");
+    try {
+      await login(data.email, data.password);
+      toast.success("Welcome back!");
+      router.push("/dashboard");
+    } catch (err: any) {
+      const message = err.response?.data?.message || "Invalid email or password";
+      setError(message);
+      toast.error(message);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen">
+      <div className="absolute right-4 top-4 z-10">
+        <ThemeToggle />
+      </div>
+
+      {/* Left Panel - Branding */}
+      <div className="relative hidden w-1/2 items-center justify-center bg-gradient-to-br from-primary/90 via-primary to-primary/70 lg:flex">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10" />
+          <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-white/5" />
+          <div className="absolute right-20 top-1/3 h-48 w-48 rounded-full bg-white/5" />
+        </div>
+        <div className="relative z-10 max-w-md px-8 text-center text-white">
+          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+            <Church className="h-10 w-10 text-white" />
+          </div>
+          <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
+            {branding.systemName}
+          </h1>
+          <p className="mb-8 text-lg text-white/80">
+            Manage your church&apos;s finances with confidence. Track donations, budgets,
+            pledges, and generate reports — all in one place.
+          </p>
+          <div className="flex items-center justify-center gap-8 text-sm text-white/70">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-white">$2.4M+</div>
+              <div>Tracked Annually</div>
+            </div>
+            <div className="h-8 w-px bg-white/30" />
+            <div className="text-center">
+              <div className="text-2xl font-bold text-white">500+</div>
+              <div>Active Members</div>
+            </div>
+            <div className="h-8 w-px bg-white/30" />
+            <div className="text-center">
+              <div className="text-2xl font-bold text-white">99.9%</div>
+              <div>Uptime</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel - Form */}
+      <div className="flex w-full items-center justify-center px-4 py-12 lg:w-1/2">
+        <div className="w-full max-w-md space-y-8">
+          {/* Mobile logo */}
+          <div className="text-center lg:hidden">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary">
+              <Church className="h-7 w-7 text-primary-foreground" />
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Sign in to your account to continue
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {error && (
+              <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">
+                Email address
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  className="h-11 pl-10"
+                  {...register("email")}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  className="h-11 pl-10 pr-10"
+                  {...register("password")}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-red-500">{errors.password.message}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="h-11 w-full text-sm font-semibold"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Signing in...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  Sign in
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              )}
+            </Button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                New to CDMS?
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Link href="/register">
+              <Button variant="outline" className="h-11 w-full text-sm font-semibold">
+                Personal Account
+              </Button>
+            </Link>
+            <Link href="/register/church">
+              <Button className="h-11 w-full text-sm font-semibold">
+                Register Church
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

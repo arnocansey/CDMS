@@ -1,0 +1,6 @@
+packages:
+  - "frontend"
+  - "mobile"
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
