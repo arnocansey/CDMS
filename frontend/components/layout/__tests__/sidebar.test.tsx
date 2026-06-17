@@ -56,7 +56,7 @@ describe("Sidebar Component", () => {
   it("renders correct number of nav items for admin", () => {
     render(<Sidebar isOpen={false} onClose={jest.fn()} />);
     const links = screen.getAllByRole("link");
-    expect(links.length).toBe(16);
+    expect(links.length).toBe(39);
   });
 
   it("renders logo link to home", () => {

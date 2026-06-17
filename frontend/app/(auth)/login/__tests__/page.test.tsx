@@ -28,12 +28,12 @@ it("renders without crashing", () => {
 
 it("renders the Sign In heading", () => {
   render(<Page />);
-  expect(screen.getByText("Sign in to your account")).toBeInTheDocument();
+  expect(screen.getByText("Sign in to your account to continue")).toBeInTheDocument();
 });
 
 it("renders email input", () => {
   render(<Page />);
-  expect(screen.getByPlaceholderText("Enter your email")).toBeInTheDocument();
+  expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
 });
 
 it("renders password input", () => {

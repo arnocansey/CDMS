@@ -39,28 +39,47 @@ jest.mock("@/lib/api", () => ({
   },
 }));
 
+const mockDashboardStats = {
+  totalMembers: 0,
+  activeMembers: 0,
+  attendanceToday: 0,
+  totalDonations: 0,
+  totalExpenses: 0,
+  netBalance: 0,
+  upcomingEvents: 0,
+  pendingPrayerRequests: 0,
+  monthlyFinancials: [],
+  attendanceTrends: [],
+  recentMembers: [],
+  announcements: [],
+};
+
+const mockFinancialData = { donations: [], tithes: [], offerings: [], expenses: [] };
+const mockFinancialHealth = { healthScore: 85 };
+const mockFundSummary: any[] = [];
+const mockFinancialGoals: any[] = [];
+
 jest.mock("@/hooks/use-queries", () => ({
   useDashboardStats: () => ({
-    data: {
-      totalMembers: 0,
-      activeMembers: 0,
-      attendanceToday: 0,
-      totalDonations: 0,
-      totalExpenses: 0,
-      netBalance: 0,
-      upcomingEvents: 0,
-      pendingPrayerRequests: 0,
-      monthlyFinancials: [],
-      attendanceTrends: [],
-      recentMembers: [],
-      announcements: [],
-    },
+    data: mockDashboardStats,
     isLoading: false,
     isError: false,
     error: null,
   }),
   useFinancialData: () => ({
-    data: { donations: [], tithes: [], offerings: [], expenses: [] },
+    data: mockFinancialData,
+    isLoading: false,
+  }),
+  useFinancialHealth: () => ({
+    data: mockFinancialHealth,
+    isLoading: false,
+  }),
+  useFundSummary: () => ({
+    data: mockFundSummary,
+    isLoading: false,
+  }),
+  useFinancialGoals: () => ({
+    data: mockFinancialGoals,
     isLoading: false,
   }),
 }));
