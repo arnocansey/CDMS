@@ -1,0 +1,14 @@
+{
+  "name": "cdms-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix frontend",
+    "install": "npm install --prefix frontend --ignore-scripts --legacy-peer-deps"
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
