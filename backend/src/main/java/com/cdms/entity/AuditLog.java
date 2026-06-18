@@ -19,23 +19,20 @@ public class AuditLog {
     @Column(nullable = false)
     private String action;
 
-    @Column(name = "entity_type", nullable = false)
+    @Column(name = "entity", nullable = false)
     private String entityType;
 
     @Column(name = "entity_id")
     private Long entityId;
 
-    @Column(name = "old_values", columnDefinition = "TEXT")
+    @Column(name = "old_value", columnDefinition = "TEXT")
     private String oldValues;
 
-    @Column(name = "new_values", columnDefinition = "TEXT")
+    @Column(name = "new_value", columnDefinition = "TEXT")
     private String newValues;
 
     @Column(name = "ip_address")
     private String ipAddress;
-
-    @Column(name = "session_id")
-    private String sessionId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -72,7 +69,5 @@ public class AuditLog {
     public void setNewValues(String newValues) { this.newValues = newValues; }
     public String getIpAddress() { return ipAddress; }
     public void setIpAddress(String ipAddress) { this.ipAddress = ipAddress; }
-    public String getSessionId() { return sessionId; }
-    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

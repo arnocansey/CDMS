@@ -38,9 +38,11 @@ export default function ExpenseApprovalsPage() {
 
   const fetchData = async () => {
     try {
+      const endDate = new Date().toISOString().slice(0, 10);
+      const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
       const [pendingRes, allRes] = await Promise.all([
         api.get("/expenses/pending"),
-        api.get("/expenses", { params: { size: 1000 } }),
+        api.get("/finance/expenses", { params: { startDate, endDate } }),
       ]);
       setPendingExpenses(pendingRes.data?.content ?? pendingRes.data ?? []);
       setAllExpenses(allRes.data?.content ?? allRes.data ?? []);

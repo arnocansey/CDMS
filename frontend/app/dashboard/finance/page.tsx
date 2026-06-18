@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useFinancialData, useMembers } from "@/hooks/use-queries";
 import api from "@/lib/api";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 import {
   donationSchema,
   titheSchema,
@@ -87,11 +89,11 @@ export default function FinancePage() {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Finance</h2>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => window.open("/api/reports/financial/pdf" + (dateParams ? `?startDate=${startDate}&endDate=${endDate}` : ""), "_blank")}>
+          <Button variant="outline" size="sm" onClick={() => window.open(`${API_BASE}/reports/financial/pdf` + (dateParams ? `?startDate=${startDate}&endDate=${endDate}` : ""), "_blank")}>
             <Download className="mr-2 h-4 w-4" />
             PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={() => window.open("/api/reports/financial/excel" + (dateParams ? `?startDate=${startDate}&endDate=${endDate}` : ""), "_blank")}>
+          <Button variant="outline" size="sm" onClick={() => window.open(`${API_BASE}/reports/financial/excel` + (dateParams ? `?startDate=${startDate}&endDate=${endDate}` : ""), "_blank")}>
             <Download className="mr-2 h-4 w-4" />
             Excel
           </Button>

@@ -5,6 +5,8 @@ import com.cdms.entity.Event;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.EventRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.cdms.security.TenantContext;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -43,8 +45,10 @@ public class EventService {
         return mapToDto(event);
     }
 
+    @Transactional
     public EventDto createEvent(EventDto eventDto) {
         Event event = new Event();
+        event.setChurchId(TenantContext.getChurchId());
         event.setTitle(eventDto.getTitle());
         event.setDescription(eventDto.getDescription());
         event.setEventDate(eventDto.getEventDate());
@@ -58,6 +62,7 @@ public class EventService {
         return mapToDto(savedEvent);
     }
 
+    @Transactional
     public EventDto updateEvent(Long id, EventDto eventDto) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", id));
@@ -74,6 +79,7 @@ public class EventService {
         return mapToDto(updatedEvent);
     }
 
+    @Transactional
     public void deleteEvent(Long id) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", id));

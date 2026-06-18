@@ -9,6 +9,8 @@ import com.cdms.repository.UserRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.cdms.security.TenantContext;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -42,8 +44,10 @@ public class BudgetService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public BudgetDto createBudget(BudgetDto budgetDto) {
         Budget budget = new Budget();
+        budget.setChurchId(TenantContext.getChurchId());
         budget.setName(budgetDto.getName());
         budget.setCategory(budgetDto.getCategory());
         budget.setAmount(budgetDto.getAmount());
@@ -59,6 +63,7 @@ public class BudgetService {
         return mapToDto(savedBudget);
     }
 
+    @Transactional
     public BudgetDto updateBudget(Long id, BudgetDto budgetDto) {
         Budget budget = budgetRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Budget", id));
@@ -80,6 +85,7 @@ public class BudgetService {
         return mapToDto(updatedBudget);
     }
 
+    @Transactional
     public void deleteBudget(Long id) {
         Budget budget = budgetRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Budget", id));
@@ -116,8 +122,15 @@ public class BudgetService {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String) {
-            String email = (String) auth.getPrincipal();
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                return null;
+            }
             return userRepository.findByEmail(email).map(User::getId).orElse(null);
         }
         return null;

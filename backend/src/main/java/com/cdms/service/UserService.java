@@ -43,6 +43,7 @@ public class UserService {
         return mapToDto(user);
     }
 
+    @Transactional
     public UserDto createUser(UserDto userDto) {
         if (userRepository.existsByEmail(userDto.getEmail())) {
             throw new BadRequestException("Email already exists");
@@ -69,6 +70,7 @@ public class UserService {
         return mapToDto(savedUser);
     }
 
+    @Transactional
     public UserDto updateUser(Long id, UserDto userDto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
@@ -91,6 +93,7 @@ public class UserService {
         return mapToDto(updatedUser);
     }
 
+    @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));

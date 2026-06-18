@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -180,8 +181,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex h-full w-64 flex-col border-r bg-card">
           <div className="flex h-16 items-center justify-between border-b px-6">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Church className="h-4 w-4 text-primary-foreground" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg overflow-hidden bg-white">
+                <Image src="/logo.png" alt="CDMS Logo" width={40} height={40} className="object-contain" />
               </div>
               <span className="text-xl font-bold">{branding.shortName}</span>
             </Link>

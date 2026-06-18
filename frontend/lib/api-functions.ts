@@ -139,7 +139,8 @@ export async function fetchCashFlowStatement(params: { startDate: string; endDat
 }
 
 export async function fetchCashFlowEntries(params?: { startDate?: string; endDate?: string }) {
-  const response = await api.get("/cash-flow", { params })
+  const endpoint = params?.startDate || params?.endDate ? "/cash-flow/range" : "/cash-flow"
+  const response = await api.get(endpoint, { params })
   return response.data
 }
 
@@ -220,7 +221,7 @@ export const visitorApi = {
 
 export const analyticsApi = {
   donorRetention: {
-    calculate: (period: string) => api.post(`/analytics/donor-retention/calculate?period=${period}`),
+    calculate: (period: string) => api.get(`/analytics/donor-retention/calculate?period=${period}`),
     report: (period: string) => api.get(`/analytics/donor-retention/report?period=${period}`),
     trend: (quarters: number) => api.get(`/analytics/donor-retention/trend?quarters=${quarters}`)
   },
@@ -233,7 +234,7 @@ export const analyticsApi = {
     average: (from: string, to: string) => api.get(`/analytics/giving-patterns/average?from=${from}&to=${to}`)
   },
   forecasting: {
-    generate: (period: string, method: string) => api.post(`/analytics/forecasting/generate?period=${period}&method=${method}`),
+    generate: (period: string, method: string) => api.post("/analytics/forecasting/generate", { period, method }),
     list: () => api.get("/analytics/forecasting"),
     accuracy: () => api.get("/analytics/forecasting/accuracy"),
     yearEnd: () => api.get("/analytics/forecasting/year-end")

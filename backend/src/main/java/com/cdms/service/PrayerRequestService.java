@@ -7,6 +7,8 @@ import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.PrayerRequestRepository;
 import com.cdms.repository.MemberRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.cdms.security.TenantContext;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,8 +43,10 @@ public class PrayerRequestService {
         return mapToDto(prayerRequest);
     }
 
+    @Transactional
     public PrayerRequestDto createPrayerRequest(PrayerRequestDto prayerRequestDto) {
         PrayerRequest prayerRequest = new PrayerRequest();
+        prayerRequest.setChurchId(TenantContext.getChurchId());
         prayerRequest.setTitle(prayerRequestDto.getTitle());
         prayerRequest.setDescription(prayerRequestDto.getDescription());
         prayerRequest.setAnonymous(prayerRequestDto.isAnonymous());
@@ -57,6 +61,7 @@ public class PrayerRequestService {
         return mapToDto(savedPrayerRequest);
     }
 
+    @Transactional
     public PrayerRequestDto approvePrayerRequest(Long id, String prayedBy) {
         PrayerRequest prayerRequest = prayerRequestRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Prayer Request", id));
@@ -69,6 +74,7 @@ public class PrayerRequestService {
         return mapToDto(updatedPrayerRequest);
     }
 
+    @Transactional
     public PrayerRequestDto markAsAnswered(Long id) {
         PrayerRequest prayerRequest = prayerRequestRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Prayer Request", id));

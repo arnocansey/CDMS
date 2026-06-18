@@ -393,8 +393,15 @@ public class BudgetForecastService {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String) {
-            String email = (String) auth.getPrincipal();
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                return null;
+            }
             return userRepository.findByEmail(email).map(User::getId).orElse(null);
         }
         return null;

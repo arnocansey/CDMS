@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Download, FileText, FileSpreadsheet, Users, Calendar, DollarSign, TrendingDown, Gift } from "lucide-react";
 import { toast } from "sonner";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+
 const REPORTS = [
   {
     id: "membership-pdf",
@@ -51,22 +53,6 @@ const REPORTS = [
     endpoint: "/reports/financial/excel",
     type: "excel",
   },
-  {
-    id: "expense-pdf",
-    title: "Expense Report",
-    description: "Detailed expense breakdown by category and date.",
-    icon: TrendingDown,
-    endpoint: "/reports/expense/pdf",
-    type: "pdf",
-  },
-  {
-    id: "contribution-pdf",
-    title: "Contribution Report",
-    description: "Individual and aggregate giving statements by member.",
-    icon: Gift,
-    endpoint: "/reports/contribution/pdf",
-    type: "pdf",
-  },
 ];
 
 export default function ReportsPage() {
@@ -89,7 +75,7 @@ export default function ReportsPage() {
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
 
-      const url = `${report.endpoint}${params.toString() ? "?" + params.toString() : ""}`;
+      const url = `${API_BASE}${report.endpoint}${params.toString() ? "?" + params.toString() : ""}`;
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,

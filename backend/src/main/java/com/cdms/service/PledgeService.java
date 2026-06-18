@@ -3,7 +3,9 @@ package com.cdms.service;
 import com.cdms.dto.PledgeDto;
 import com.cdms.dto.PledgePaymentDto;
 import com.cdms.entity.Member;
+import org.springframework.transaction.annotation.Transactional;
 import com.cdms.entity.Pledge;
+import com.cdms.security.TenantContext;
 import com.cdms.entity.PledgePayment;
 import com.cdms.entity.User;
 import com.cdms.exception.ResourceNotFoundException;
@@ -41,30 +43,35 @@ public class PledgeService {
         this.auditLogService = auditLogService;
     }
 
+    @Transactional(readOnly = true)
     public List<PledgeDto> getAllPledges() {
         return pledgeRepository.findAll().stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public PledgeDto getPledgeById(Long id) {
         Pledge pledge = pledgeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pledge", id));
         return mapToDto(pledge);
     }
 
+    @Transactional(readOnly = true)
     public List<PledgeDto> getPledgesByMember(Long memberId) {
         return pledgeRepository.findByMemberId(memberId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<PledgeDto> getActivePledges() {
         return pledgeRepository.findByStatus("ACTIVE").stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<PledgeDto> getOverduePledges() {
         return pledgeRepository.findByStatus("ACTIVE").stream()
                 .filter(p -> p.getDueDate() != null && p.getDueDate().isBefore(LocalDate.now()))
@@ -72,11 +79,13 @@ public class PledgeService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public PledgeDto createPledge(PledgeDto dto) {
         Member member = memberRepository.findById(dto.getMemberId())
                 .orElseThrow(() -> new ResourceNotFoundException("Member", dto.getMemberId()));
 
         Pledge pledge = new Pledge();
+        pledge.setChurchId(TenantContext.getChurchId());
         pledge.setMember(member);
         pledge.setPledgeType(dto.getPledgeType());
         pledge.setDescription(dto.getDescription());
@@ -92,6 +101,7 @@ public class PledgeService {
         return mapToDto(savedPledge);
     }
 
+    @Transactional
     public PledgeDto updatePledge(Long id, PledgeDto dto) {
         Pledge pledge = pledgeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pledge", id));
@@ -111,6 +121,7 @@ public class PledgeService {
         return mapToDto(updatedPledge);
     }
 
+    @Transactional
     public void deletePledge(Long id) {
         Pledge pledge = pledgeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pledge", id));
@@ -119,6 +130,7 @@ public class PledgeService {
         pledgeRepository.deleteById(id);
     }
 
+    @Transactional
     public PledgePaymentDto recordPayment(PledgePaymentDto dto) {
         Pledge pledge = pledgeRepository.findById(dto.getPledgeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pledge", dto.getPledgeId()));
@@ -144,12 +156,14 @@ public class PledgeService {
         return mapPaymentToDto(savedPayment);
     }
 
+    @Transactional(readOnly = true)
     public List<PledgePaymentDto> getPledgePayments(Long pledgeId) {
         return pledgePaymentRepository.findByPledgeIdOrderByPaymentDateDesc(pledgeId).stream()
                 .map(this::mapPaymentToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> getPledgeSummary() {
         BigDecimal totalPledged = pledgeRepository.sumPledgeAmountByStatus("ACTIVE")
                 .add(pledgeRepository.sumPledgeAmountByStatus("COMPLETED"))
@@ -205,8 +219,15 @@ public class PledgeService {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String) {
-            String email = (String) auth.getPrincipal();
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                return null;
+            }
             return userRepository.findByEmail(email).map(User::getId).orElse(null);
         }
         return null;

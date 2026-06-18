@@ -9,6 +9,7 @@ import com.cdms.security.TenantContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -84,6 +85,7 @@ public class PermissionService {
         this.userRepository = userRepository;
     }
 
+    @Transactional
     public void initDefaultPermissions(Long churchId) {
         permissionRepository.deleteByChurchId(churchId);
 
@@ -110,6 +112,7 @@ public class PermissionService {
         return permissionRepository.findByChurchIdAndRole(churchId, role);
     }
 
+    @Transactional
     public Permission updatePermission(Long churchId, String role, String resource, String action, boolean allowed) {
         Permission permission = permissionRepository
                 .findByChurchIdAndRoleAndResourceAndAction(churchId, role, resource, action)

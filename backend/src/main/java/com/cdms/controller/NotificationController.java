@@ -5,6 +5,7 @@ import com.cdms.repository.UserRepository;
 import com.cdms.service.NotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class NotificationController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
     public ResponseEntity<List<NotificationDto>> getNotifications(Authentication authentication) {
         Long userId = getUserIdFromAuth(authentication);
         List<NotificationDto> notifications = notificationService.getNotificationsByUserId(userId);
@@ -30,6 +32,7 @@ public class NotificationController {
     }
 
     @GetMapping("/unread")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
     public ResponseEntity<List<NotificationDto>> getUnreadNotifications(Authentication authentication) {
         Long userId = getUserIdFromAuth(authentication);
         List<NotificationDto> notifications = notificationService.getUnreadNotifications(userId);
@@ -37,6 +40,7 @@ public class NotificationController {
     }
 
     @GetMapping("/unread/count")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
     public ResponseEntity<Map<String, Long>> getUnreadCount(Authentication authentication) {
         Long userId = getUserIdFromAuth(authentication);
         long count = notificationService.getUnreadCount(userId);
@@ -44,12 +48,14 @@ public class NotificationController {
     }
 
     @PutMapping("/{id}/read")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
     public ResponseEntity<NotificationDto> markAsRead(@PathVariable Long id) {
         NotificationDto notification = notificationService.markAsRead(id);
         return ResponseEntity.ok(notification);
     }
 
     @PutMapping("/read-all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
     public ResponseEntity<Void> markAllAsRead(Authentication authentication) {
         Long userId = getUserIdFromAuth(authentication);
         notificationService.markAllAsRead(userId);
@@ -57,6 +63,7 @@ public class NotificationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
     public ResponseEntity<Void> deleteNotification(@PathVariable Long id) {
         notificationService.deleteNotification(id);
         return ResponseEntity.ok().build();

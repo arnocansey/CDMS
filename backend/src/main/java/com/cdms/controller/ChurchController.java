@@ -152,6 +152,7 @@ public class ChurchController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> createChurch(@Valid @RequestBody RegisterRequest request) {
         Church church = new Church();
         church.setName(request.getName() != null ? request.getName() : request.getFirstName() + "'s Church");

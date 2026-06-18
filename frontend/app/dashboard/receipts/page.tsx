@@ -66,7 +66,7 @@ export default function ReceiptsPage() {
   const handleUpdateStatus = async () => {
     if (!updatingReceipt || !newStatus) return;
     try {
-      await api.put(`/receipts/${updatingReceipt.id}/status`, { status: newStatus });
+      await api.put(`/receipts/${updatingReceipt.id}/status`, null, { params: { status: newStatus } });
       toast.success(`Receipt status updated to ${newStatus}`);
       setUpdatingReceipt(null);
       setNewStatus("");

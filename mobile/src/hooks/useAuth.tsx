@@ -24,6 +24,7 @@ interface RegisterData {
   lastName: string;
   email: string;
   password: string;
+  churchId?: number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

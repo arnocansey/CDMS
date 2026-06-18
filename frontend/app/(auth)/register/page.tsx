@@ -96,7 +96,7 @@ export default function RegisterPage() {
     }
     setSearching(true);
     try {
-      const response = await api.get("/approvals/churches/search", { params: { q: query } });
+      const response = await api.get("/approvals/churches/search", { params: { query } });
       setChurchResults(response.data);
     } catch {
       setChurchResults([]);

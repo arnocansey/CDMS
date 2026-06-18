@@ -7,6 +7,8 @@ import com.cdms.repository.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.cdms.security.TenantContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -55,8 +57,10 @@ public class FinancialService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public DonationDto createDonation(DonationDto donationDto) {
         Donation donation = new Donation();
+        donation.setChurchId(TenantContext.getChurchId());
         donation.setAmount(donationDto.getAmount());
         donation.setCategory(donationDto.getCategory());
         donation.setDescription(donationDto.getDescription());
@@ -92,11 +96,13 @@ public class FinancialService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public TitheDto createTithe(TitheDto titheDto) {
         Member member = memberRepository.findById(titheDto.getMemberId())
                 .orElseThrow(() -> new ResourceNotFoundException("Member", titheDto.getMemberId()));
 
         Tithe tithe = new Tithe();
+        tithe.setChurchId(TenantContext.getChurchId());
         tithe.setMember(member);
         tithe.setAmount(titheDto.getAmount());
         tithe.setTitheDate(titheDto.getTitheDate() != null ? titheDto.getTitheDate() : LocalDate.now());
@@ -125,8 +131,10 @@ public class FinancialService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public OfferingDto createOffering(OfferingDto offeringDto) {
         Offering offering = new Offering();
+        offering.setChurchId(TenantContext.getChurchId());
         offering.setServiceDate(offeringDto.getServiceDate() != null ? offeringDto.getServiceDate() : LocalDate.now());
         offering.setServiceType(offeringDto.getServiceType());
         offering.setAmount(offeringDto.getAmount());
@@ -156,8 +164,10 @@ public class FinancialService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public ExpenseDto createExpense(ExpenseDto expenseDto) {
         Expense expense = new Expense();
+        expense.setChurchId(TenantContext.getChurchId());
         expense.setCategory(expenseDto.getCategory());
         expense.setAmount(expenseDto.getAmount());
         expense.setDescription(expenseDto.getDescription());
@@ -510,8 +520,15 @@ public class FinancialService {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String) {
-            String email = (String) auth.getPrincipal();
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                return null;
+            }
             return userRepository.findByEmail(email).map(User::getId).orElse(null);
         }
         return null;

@@ -5,6 +5,8 @@ import com.cdms.entity.Announcement;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.AnnouncementRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.cdms.security.TenantContext;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -37,8 +39,10 @@ public class AnnouncementService {
         return mapToDto(announcement);
     }
 
+    @Transactional
     public AnnouncementDto createAnnouncement(AnnouncementDto announcementDto) {
         Announcement announcement = new Announcement();
+        announcement.setChurchId(TenantContext.getChurchId());
         announcement.setTitle(announcementDto.getTitle());
         announcement.setContent(announcementDto.getContent());
         announcement.setPublishDate(announcementDto.getPublishDate() != null ? announcementDto.getPublishDate() : LocalDate.now());
@@ -50,6 +54,7 @@ public class AnnouncementService {
         return mapToDto(savedAnnouncement);
     }
 
+    @Transactional
     public AnnouncementDto updateAnnouncement(Long id, AnnouncementDto announcementDto) {
         Announcement announcement = announcementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Announcement", id));
@@ -64,6 +69,7 @@ public class AnnouncementService {
         return mapToDto(updatedAnnouncement);
     }
 
+    @Transactional
     public void deleteAnnouncement(Long id) {
         Announcement announcement = announcementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Announcement", id));

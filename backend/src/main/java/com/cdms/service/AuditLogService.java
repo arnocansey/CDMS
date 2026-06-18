@@ -52,13 +52,12 @@ public class AuditLogService {
     }
 
     public void logAction(Long churchId, Long userId, String action, String entityType, Long entityId,
-                          String oldValues, String newValues, String ipAddress, String sessionId) {
+                          String oldValues, String newValues, String ipAddress) {
         AuditLog auditLog = new AuditLog(userId, action, entityType, entityId);
         auditLog.setChurchId(churchId);
         auditLog.setOldValues(oldValues);
         auditLog.setNewValues(newValues);
         auditLog.setIpAddress(ipAddress != null ? ipAddress : getClientIpAddress());
-        auditLog.setSessionId(sessionId);
         auditLogRepository.save(auditLog);
     }
 

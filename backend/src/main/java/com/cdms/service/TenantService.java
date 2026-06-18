@@ -10,6 +10,7 @@ import com.cdms.repository.ChurchSubscriptionRepository;
 import com.cdms.repository.SubscriptionPlanRepository;
 import com.cdms.security.TenantContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -66,6 +67,7 @@ public class TenantService {
                 .orElseThrow(() -> new ResourceNotFoundException("Church not found with slug: " + slug));
     }
 
+    @Transactional
     public Church createChurch(Church church, String planName) {
         Church savedChurch = churchRepository.save(church);
 

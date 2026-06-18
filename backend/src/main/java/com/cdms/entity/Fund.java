@@ -31,6 +31,7 @@ public class Fund {
     @Column(name = "target_amount", precision = 12, scale = 2)
     private BigDecimal targetAmount;
 
+    @Column(name = "is_active")
     private boolean active = true;
 
     @Column(name = "created_by")

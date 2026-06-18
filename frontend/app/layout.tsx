@@ -7,8 +7,8 @@ import { branding } from "@/lib/branding";
 
 export const metadata: Metadata = {
   title: branding.systemName,
-  description: "A comprehensive church financial management platform",
-  icons: { icon: "/favicon.svg" },
+  description: "A comprehensive church database management platform",
+  icons: { icon: "/logo.png", apple: "/logo.png" },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2563eb",
+  themeColor: "#1e3a8a",
   width: "device-width",
   initialScale: 1,
 };

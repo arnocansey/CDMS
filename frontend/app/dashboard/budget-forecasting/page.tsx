@@ -89,7 +89,7 @@ export default function BudgetForecastingPage() {
   const generateForecast = async () => {
     setGenerating(true);
     try {
-      await api.post(`/analytics/forecasting/generate?period=${encodeURIComponent(forecastPeriod)}&method=${forecastMethod}`);
+      await api.post("/analytics/forecasting/generate", { period: forecastPeriod, method: forecastMethod });
       toast.success("Forecast generated successfully");
       loadExistingData();
     } catch {

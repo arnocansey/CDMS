@@ -39,6 +39,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            Long churchId = tokenProvider.getChurchIdFromToken(token);
+            if (churchId != null) {
+                TenantContext.setChurchId(churchId);
+            }
         }
 
         filterChain.doFilter(request, response);

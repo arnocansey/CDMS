@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.cdms.security.TenantContext;
 
 import java.time.LocalDate;
 
@@ -51,12 +52,14 @@ public class MemberService {
         return mapToDto(member);
     }
 
+    @Transactional
     public MemberDto createMember(MemberDto memberDto) {
         if (memberRepository.existsByEmail(memberDto.getEmail())) {
             throw new BadRequestException("Email already exists");
         }
 
         Member member = new Member();
+        member.setChurchId(TenantContext.getChurchId());
         member.setFirstName(memberDto.getFirstName());
         member.setLastName(memberDto.getLastName());
         member.setEmail(memberDto.getEmail());
@@ -84,6 +87,7 @@ public class MemberService {
         return mapToDto(savedMember);
     }
 
+    @Transactional
     public MemberDto updateMember(Long id, MemberDto memberDto) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Member", id));
@@ -116,6 +120,7 @@ public class MemberService {
         return mapToDto(updatedMember);
     }
 
+    @Transactional
     public void deleteMember(Long id) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Member", id));
@@ -154,8 +159,15 @@ public class MemberService {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String) {
-            String email = (String) auth.getPrincipal();
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                return null;
+            }
             return userRepository.findByEmail(email).map(User::getId).orElse(null);
         }
         return null;

@@ -8,6 +8,8 @@ import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.DepartmentRepository;
 import com.cdms.repository.MemberRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.cdms.security.TenantContext;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,12 +37,14 @@ public class DepartmentService {
         return mapToDto(department);
     }
 
+    @Transactional
     public DepartmentDto createDepartment(DepartmentDto departmentDto) {
         if (departmentRepository.existsByName(departmentDto.getName())) {
             throw new BadRequestException("Department name already exists");
         }
 
         Department department = new Department();
+        department.setChurchId(TenantContext.getChurchId());
         department.setName(departmentDto.getName());
         department.setDescription(departmentDto.getDescription());
 
@@ -54,6 +58,7 @@ public class DepartmentService {
         return mapToDto(savedDepartment);
     }
 
+    @Transactional
     public DepartmentDto updateDepartment(Long id, DepartmentDto departmentDto) {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", id));
@@ -71,6 +76,7 @@ public class DepartmentService {
         return mapToDto(updatedDepartment);
     }
 
+    @Transactional
     public void deleteDepartment(Long id) {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", id));

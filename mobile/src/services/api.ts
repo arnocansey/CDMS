@@ -1,10 +1,11 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://cdmsbackend.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
+  timeout: 60000, // 60s timeout to handle Render cold starts
   headers: {
     'Content-Type': 'application/json',
   },

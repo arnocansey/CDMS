@@ -7,6 +7,8 @@ import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.AttendanceRepository;
 import com.cdms.repository.MemberRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.cdms.security.TenantContext;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -35,11 +37,13 @@ public class AttendanceService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public AttendanceDto recordAttendance(AttendanceDto attendanceDto) {
         Member member = memberRepository.findById(attendanceDto.getMemberId())
                 .orElseThrow(() -> new ResourceNotFoundException("Member", attendanceDto.getMemberId()));
 
         Attendance attendance = new Attendance();
+        attendance.setChurchId(TenantContext.getChurchId());
         attendance.setMember(member);
         attendance.setServiceDate(attendanceDto.getServiceDate() != null ? attendanceDto.getServiceDate() : LocalDate.now());
         attendance.setServiceType(attendanceDto.getServiceType());

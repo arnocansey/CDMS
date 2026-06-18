@@ -5,6 +5,7 @@ import com.cdms.entity.Notification;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.NotificationRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,12 +35,14 @@ public class NotificationService {
         return notificationRepository.countUnreadByUserId(userId);
     }
 
+    @Transactional
     public NotificationDto createNotification(Long userId, String title, String message, String type) {
         Notification notification = new Notification(userId, title, message, type);
         Notification savedNotification = notificationRepository.save(notification);
         return mapToDto(savedNotification);
     }
 
+    @Transactional
     public NotificationDto markAsRead(Long id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", id));
@@ -48,12 +51,14 @@ public class NotificationService {
         return mapToDto(updatedNotification);
     }
 
+    @Transactional
     public void markAllAsRead(Long userId) {
         List<Notification> unreadNotifications = notificationRepository.findUnreadByUserId(userId);
         unreadNotifications.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(unreadNotifications);
     }
 
+    @Transactional
     public void deleteNotification(Long id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", id));

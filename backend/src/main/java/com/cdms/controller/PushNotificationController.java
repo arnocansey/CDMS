@@ -4,6 +4,7 @@ import com.cdms.security.TenantContext;
 import com.cdms.service.PushNotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -19,6 +20,7 @@ public class PushNotificationController {
     }
 
     @PostMapping("/subscribe")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
     public ResponseEntity<Map<String, String>> subscribe(@RequestBody Map<String, String> request,
                                                          Authentication authentication) {
         Long userId = getUserIdFromAuth(authentication);
@@ -42,6 +44,7 @@ public class PushNotificationController {
     }
 
     @DeleteMapping("/unsubscribe")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
     public ResponseEntity<Map<String, String>> unsubscribe(@RequestBody Map<String, String> request) {
         String endpoint = request.get("endpoint");
 
@@ -54,6 +57,7 @@ public class PushNotificationController {
     }
 
     @PostMapping("/test")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
     public ResponseEntity<Map<String, String>> sendTestNotification(Authentication authentication) {
         Long userId = getUserIdFromAuth(authentication);
         pushNotificationService.sendNotification(userId, "Test Notification",

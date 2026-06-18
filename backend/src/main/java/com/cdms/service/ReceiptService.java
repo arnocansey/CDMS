@@ -3,6 +3,7 @@ package com.cdms.service;
 import com.cdms.dto.ReceiptDto;
 import com.cdms.entity.Member;
 import com.cdms.entity.Receipt;
+import org.springframework.transaction.annotation.Transactional;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.MemberRepository;
 import com.cdms.repository.ReceiptRepository;
@@ -39,6 +40,7 @@ public class ReceiptService {
         this.emailService = emailService;
     }
 
+    @Transactional
     public ReceiptDto generateReceipt(ReceiptDto dto) {
         Receipt receipt = new Receipt();
         receipt.setReceiptNumber("REC-" + System.currentTimeMillis());
@@ -61,30 +63,35 @@ public class ReceiptService {
         return mapToDto(savedReceipt);
     }
 
+    @Transactional(readOnly = true)
     public ReceiptDto getReceiptById(Long id) {
         Receipt receipt = receiptRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Receipt", id));
         return mapToDto(receipt);
     }
 
+    @Transactional(readOnly = true)
     public ReceiptDto getReceiptByNumber(String number) {
         Receipt receipt = receiptRepository.findByReceiptNumber(number)
                 .orElseThrow(() -> new ResourceNotFoundException("Receipt: " + number));
         return mapToDto(receipt);
     }
 
+    @Transactional(readOnly = true)
     public List<ReceiptDto> getReceiptsByMember(Long memberId) {
         return receiptRepository.findByMemberId(memberId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<ReceiptDto> getReceiptsByDateRange(LocalDate start, LocalDate end) {
         return receiptRepository.findByReceiptDateBetween(start, end).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public ReceiptDto updateReceiptStatus(Long id, String status) {
         Receipt receipt = receiptRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Receipt", id));

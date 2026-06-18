@@ -3,7 +3,9 @@ package com.cdms.service;
 import com.cdms.dto.FinancialGoalDto;
 import com.cdms.dto.GoalContributionDto;
 import com.cdms.entity.FinancialGoal;
+import org.springframework.transaction.annotation.Transactional;
 import com.cdms.entity.GoalContribution;
+import com.cdms.security.TenantContext;
 import com.cdms.entity.Member;
 import com.cdms.entity.User;
 import com.cdms.exception.ResourceNotFoundException;
@@ -63,6 +65,7 @@ public class FinancialGoalService {
 
     public FinancialGoalDto createGoal(FinancialGoalDto dto) {
         FinancialGoal goal = new FinancialGoal();
+        goal.setChurchId(TenantContext.getChurchId());
         goal.setName(dto.getName());
         goal.setDescription(dto.getDescription());
         goal.setTargetAmount(dto.getTargetAmount());
@@ -106,6 +109,7 @@ public class FinancialGoalService {
         financialGoalRepository.deleteById(id);
     }
 
+    @Transactional
     public GoalContributionDto recordContribution(GoalContributionDto dto) {
         FinancialGoal goal = financialGoalRepository.findById(dto.getGoalId())
                 .orElseThrow(() -> new ResourceNotFoundException("FinancialGoal", dto.getGoalId()));
@@ -137,6 +141,7 @@ public class FinancialGoalService {
         return mapContributionToDto(savedContribution);
     }
 
+    @Transactional(readOnly = true)
     public List<GoalContributionDto> getGoalContributions(Long goalId) {
         return goalContributionRepository.findByGoalIdOrderByContributionDateDesc(goalId).stream()
                 .map(this::mapContributionToDto)
@@ -200,8 +205,15 @@ public class FinancialGoalService {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String) {
-            String email = (String) auth.getPrincipal();
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                return null;
+            }
             return userRepository.findByEmail(email).map(User::getId).orElse(null);
         }
         return null;

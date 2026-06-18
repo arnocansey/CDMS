@@ -3,7 +3,9 @@ package com.cdms.service;
 import com.cdms.dto.FundDto;
 import com.cdms.dto.FundTransactionDto;
 import com.cdms.entity.Fund;
+import org.springframework.transaction.annotation.Transactional;
 import com.cdms.entity.FundTransaction;
+import com.cdms.security.TenantContext;
 import com.cdms.entity.User;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.FundRepository;
@@ -54,8 +56,10 @@ public class FundService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public FundDto createFund(FundDto dto) {
         Fund fund = new Fund();
+        fund.setChurchId(TenantContext.getChurchId());
         fund.setName(dto.getName());
         fund.setDescription(dto.getDescription());
         fund.setFundType(dto.getFundType());
@@ -65,9 +69,18 @@ public class FundService {
         fund.setActive(dto.getActive() != null ? dto.getActive() : true);
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String) {
-            String email = (String) auth.getPrincipal();
-            fund.setCreatedBy(email);
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                email = null;
+            }
+            if (email != null) {
+                fund.setCreatedBy(email);
+            }
         }
 
         Fund savedFund = fundRepository.save(fund);
@@ -76,6 +89,7 @@ public class FundService {
         return mapToDto(savedFund);
     }
 
+    @Transactional
     public FundDto updateFund(Long id, FundDto dto) {
         Fund fund = fundRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Fund", id));
@@ -96,6 +110,7 @@ public class FundService {
         return mapToDto(updatedFund);
     }
 
+    @Transactional
     public void deleteFund(Long id) {
         Fund fund = fundRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Fund", id));
@@ -117,6 +132,7 @@ public class FundService {
         return summary;
     }
 
+    @Transactional
     public FundTransactionDto recordFundTransaction(FundTransactionDto dto) {
         Fund fund = fundRepository.findById(dto.getFundId())
                 .orElseThrow(() -> new ResourceNotFoundException("Fund", dto.getFundId()));
@@ -144,12 +160,14 @@ public class FundService {
         return mapTransactionToDto(savedTransaction);
     }
 
+    @Transactional(readOnly = true)
     public List<FundTransactionDto> getFundTransactions(Long fundId) {
         return fundTransactionRepository.findByFundId(fundId).stream()
                 .map(this::mapTransactionToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<FundTransactionDto> getFundTransactionsByDateRange(Long fundId, LocalDate start, LocalDate end) {
         return fundTransactionRepository.findByFundIdAndTransactionDateBetween(fundId, start, end).stream()
                 .map(this::mapTransactionToDto)
@@ -189,8 +207,15 @@ public class FundService {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String) {
-            String email = (String) auth.getPrincipal();
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                return null;
+            }
             return userRepository.findByEmail(email).map(User::getId).orElse(null);
         }
         return null;

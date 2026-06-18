@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1e40af"
+      "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -23,7 +23,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1e40af"
       },
-      "package": "com.cdms.mobile"
+      "package": "com.cdms.mobile",
+      "minSdk": 24
     },
     "web": {
       "favicon": "./assets/favicon.png"

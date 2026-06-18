@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.cdms.security.TenantContext;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -39,7 +40,11 @@ public class RecurringDonationService {
         this.auditLogService = auditLogService;
     }
 
+    @Transactional
     public RecurringDonation create(RecurringDonation recurringDonation) {
+        if (recurringDonation.getChurchId() == null) {
+            recurringDonation.setChurchId(TenantContext.getChurchId());
+        }
         Long currentUserId = getCurrentUserId();
         if (currentUserId != null) {
             User user = userRepository.findById(currentUserId).orElse(null);
@@ -57,6 +62,7 @@ public class RecurringDonationService {
         return recurringDonationRepository.findByChurchIdAndActive(churchId, true);
     }
 
+    @Transactional
     public RecurringDonation cancel(Long id) {
         RecurringDonation recurring = recurringDonationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("RecurringDonation", id));
@@ -126,8 +132,15 @@ public class RecurringDonationService {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String) {
-            String email = (String) auth.getPrincipal();
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                return null;
+            }
             return userRepository.findByEmail(email).map(User::getId).orElse(null);
         }
         return null;

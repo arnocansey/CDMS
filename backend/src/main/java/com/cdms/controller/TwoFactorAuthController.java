@@ -9,6 +9,7 @@ import com.cdms.service.TwoFactorAuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -29,6 +30,7 @@ public class TwoFactorAuthController {
     }
 
     @PostMapping("/setup")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
     public ResponseEntity<Map<String, String>> setup() {
         Long userId = getCurrentUserId();
         String secret = twoFactorAuthService.generateSecret(userId);
@@ -44,6 +46,7 @@ public class TwoFactorAuthController {
     }
 
     @PostMapping("/enable")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
     public ResponseEntity<Map<String, String>> enable(@RequestBody Map<String, String> body) {
         Long userId = getCurrentUserId();
         String code = body.get("code");
@@ -55,6 +58,7 @@ public class TwoFactorAuthController {
     }
 
     @PostMapping("/disable")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
     public ResponseEntity<Map<String, String>> disable(@RequestBody Map<String, String> body) {
         Long userId = getCurrentUserId();
         String password = body.get("password");
@@ -66,6 +70,7 @@ public class TwoFactorAuthController {
     }
 
     @PostMapping("/verify")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
     public ResponseEntity<Map<String, Object>> verify(@RequestBody Map<String, String> body) {
         Long userId = getCurrentUserId();
         String code = body.get("code");
@@ -77,6 +82,7 @@ public class TwoFactorAuthController {
     }
 
     @PostMapping("/backup-codes")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
     public ResponseEntity<Map<String, Object>> generateBackupCodes() {
         Long userId = getCurrentUserId();
         List<String> codes = twoFactorAuthService.generateBackupCodes(userId);
@@ -87,6 +93,7 @@ public class TwoFactorAuthController {
     }
 
     @GetMapping("/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
     public ResponseEntity<Map<String, Object>> getStatus() {
         Long userId = getCurrentUserId();
         boolean isSetup = twoFactorAuthService.isSetup(userId);
@@ -100,8 +107,15 @@ public class TwoFactorAuthController {
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String) {
-            String email = (String) auth.getPrincipal();
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                throw new BadRequestException("Not authenticated");
+            }
             return userRepository.findByEmail(email)
                     .orElseThrow(() -> new BadRequestException("User not found"))
                     .getId();
