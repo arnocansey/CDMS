@@ -32,18 +32,22 @@ public class CashFlowController {
     @GetMapping("/range")
     @PreAuthorize("hasAnyRole('ADMIN', 'TREASURER', 'PASTOR')")
     public ResponseEntity<List<CashFlowEntryDto>> getEntriesByDateRange(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<CashFlowEntryDto> entries = cashFlowService.getEntriesByDateRange(startDate, endDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        List<CashFlowEntryDto> entries = cashFlowService.getEntriesByDateRange(start, end);
         return ResponseEntity.ok(entries);
     }
 
     @GetMapping("/statement")
     @PreAuthorize("hasAnyRole('ADMIN', 'TREASURER', 'PASTOR')")
     public ResponseEntity<CashFlowStatementDto> getCashFlowStatement(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        CashFlowStatementDto statement = cashFlowService.getCashFlowStatement(startDate, endDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        CashFlowStatementDto statement = cashFlowService.getCashFlowStatement(start, end);
         return ResponseEntity.ok(statement);
     }
 

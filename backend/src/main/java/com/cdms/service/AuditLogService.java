@@ -2,6 +2,7 @@ package com.cdms.service;
 
 import com.cdms.entity.AuditLog;
 import com.cdms.repository.AuditLogRepository;
+import com.cdms.security.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,12 +30,14 @@ public class AuditLogService {
 
     public void log(Long userId, String action, String entityType, Long entityId) {
         AuditLog auditLog = new AuditLog(userId, action, entityType, entityId);
+        auditLog.setChurchId(TenantContext.getChurchId());
         auditLog.setIpAddress(getClientIpAddress());
         auditLogRepository.save(auditLog);
     }
 
     public void log(Long userId, String action, String entityType, Long entityId, String oldValues, String newValues) {
         AuditLog auditLog = new AuditLog(userId, action, entityType, entityId);
+        auditLog.setChurchId(TenantContext.getChurchId());
         auditLog.setOldValues(oldValues);
         auditLog.setNewValues(newValues);
         auditLog.setIpAddress(getClientIpAddress());

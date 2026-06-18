@@ -24,9 +24,11 @@ public class FinancialController {
 
     @GetMapping("/donations")
     public ResponseEntity<List<DonationDto>> getDonations(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<DonationDto> donations = financialService.getDonations(startDate, endDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        List<DonationDto> donations = financialService.getDonations(start, end);
         return ResponseEntity.ok(donations);
     }
 
@@ -39,9 +41,11 @@ public class FinancialController {
 
     @GetMapping("/tithes")
     public ResponseEntity<List<TitheDto>> getTithes(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<TitheDto> tithes = financialService.getTithes(startDate, endDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        List<TitheDto> tithes = financialService.getTithes(start, end);
         return ResponseEntity.ok(tithes);
     }
 
@@ -54,9 +58,11 @@ public class FinancialController {
 
     @GetMapping("/offerings")
     public ResponseEntity<List<OfferingDto>> getOfferings(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<OfferingDto> offerings = financialService.getOfferings(startDate, endDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        List<OfferingDto> offerings = financialService.getOfferings(start, end);
         return ResponseEntity.ok(offerings);
     }
 
@@ -69,9 +75,11 @@ public class FinancialController {
 
     @GetMapping("/expenses")
     public ResponseEntity<List<ExpenseDto>> getExpenses(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<ExpenseDto> expenses = financialService.getExpenses(startDate, endDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        List<ExpenseDto> expenses = financialService.getExpenses(start, end);
         return ResponseEntity.ok(expenses);
     }
 
