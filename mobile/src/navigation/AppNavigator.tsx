@@ -172,7 +172,7 @@ function MoreScreen() {
       />
       <Stack.Screen 
         name="GenericModule" 
-        component={GenericModuleScreen} 
+        component={GenericModuleScreen as any} 
         options={{ headerShown: false }} 
       />
     </Stack.Navigator>
@@ -699,8 +699,8 @@ function AppNavigator() {
       {isAuthenticated ? (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Main" component={MainTabNavigator} />
-          <Stack.Screen name="MemberDetail" component={MemberDetailScreen} />
-          <Stack.Screen name="EventDetail" component={EventDetailScreen} />
+          <Stack.Screen name="MemberDetail" component={MemberDetailScreen as any} />
+          <Stack.Screen name="EventDetail" component={EventDetailScreen as any} />
         </Stack.Navigator>
       ) : (
         <AuthNavigator />

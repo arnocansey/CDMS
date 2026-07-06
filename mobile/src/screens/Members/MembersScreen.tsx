@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import api from '../../services/api';
 import { Member } from '../../types';
+import { Skeleton } from '../../components/Skeleton';
 
 export default function MembersScreen({ navigation }: any) {
   const [members, setMembers] = useState<Member[]>([]);
@@ -216,9 +217,21 @@ export default function MembersScreen({ navigation }: any) {
       </View>
 
       {isLoading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#1e40af" />
-        </View>
+        <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <View key={idx} style={styles.memberCard}>
+              <Skeleton width={52} height={52} borderRadius={16} style={{ marginRight: 14 }} />
+              <View style={styles.memberInfo}>
+                <Skeleton width={120} height={16} borderRadius={4} style={{ marginBottom: 6 }} />
+                <Skeleton width={160} height={12} borderRadius={4} style={{ marginBottom: 4 }} />
+                <Skeleton width={90} height={10} borderRadius={4} />
+              </View>
+              <View style={styles.statusContainer}>
+                <Skeleton width={55} height={20} borderRadius={10} />
+              </View>
+            </View>
+          ))}
+        </ScrollView>
       ) : (
         <FlatList
           data={members}

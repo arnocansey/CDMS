@@ -42,9 +42,11 @@ public class AttendanceController {
     @GetMapping("/member/{memberId}")
     public ResponseEntity<List<AttendanceDto>> getMemberAttendance(
             @PathVariable Long memberId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<AttendanceDto> attendance = attendanceService.getMemberAttendance(memberId, startDate, endDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        List<AttendanceDto> attendance = attendanceService.getMemberAttendance(memberId, start, end);
         return ResponseEntity.ok(attendance);
     }
 

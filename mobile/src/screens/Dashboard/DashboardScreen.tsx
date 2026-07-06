@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import api from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import { DashboardData } from '../../types';
+import { Skeleton } from '../../components/Skeleton';
 
 export default function DashboardScreen({ navigation }: any) {
   const { user, logout } = useAuth();
@@ -68,6 +69,8 @@ export default function DashboardScreen({ navigation }: any) {
     ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase()
     : 'U';
 
+  const isLoading = !dashboardData && !refreshing;
+
   return (
     <ScrollView
       style={styles.container}
@@ -106,7 +109,11 @@ export default function DashboardScreen({ navigation }: any) {
               <View style={[styles.iconBadge, styles.membersIconBadge]}>
                 <Ionicons name="people" size={20} color="#3b82f6" />
               </View>
-              <Text style={styles.statValue}>{dashboardData?.totalMembers || 0}</Text>
+              {isLoading ? (
+                <Skeleton width={50} height={24} borderRadius={6} />
+              ) : (
+                <Text style={styles.statValue}>{dashboardData?.totalMembers || 0}</Text>
+              )}
             </View>
             <Text style={styles.statLabel}>Total Members</Text>
           </View>
@@ -116,7 +123,11 @@ export default function DashboardScreen({ navigation }: any) {
               <View style={[styles.iconBadge, styles.attendanceIconBadge]}>
                 <Ionicons name="checkmark-circle" size={20} color="#10b981" />
               </View>
-              <Text style={styles.statValue}>{dashboardData?.attendanceToday || 0}</Text>
+              {isLoading ? (
+                <Skeleton width={50} height={24} borderRadius={6} />
+              ) : (
+                <Text style={styles.statValue}>{dashboardData?.attendanceToday || 0}</Text>
+              )}
             </View>
             <Text style={styles.statLabel}>Attendance Today</Text>
           </View>
@@ -126,9 +137,13 @@ export default function DashboardScreen({ navigation }: any) {
               <View style={[styles.iconBadge, styles.incomeIconBadge]}>
                 <Ionicons name="cash" size={20} color="#f59e0b" />
               </View>
-              <Text style={styles.statValue} numberOfLines={1}>
-                ${(dashboardData?.totalDonations || 0).toLocaleString()}
-              </Text>
+              {isLoading ? (
+                <Skeleton width={70} height={24} borderRadius={6} />
+              ) : (
+                <Text style={styles.statValue} numberOfLines={1}>
+                  ${(dashboardData?.totalDonations || 0).toLocaleString()}
+                </Text>
+              )}
             </View>
             <Text style={styles.statLabel}>Total Income</Text>
           </View>
@@ -138,7 +153,11 @@ export default function DashboardScreen({ navigation }: any) {
               <View style={[styles.iconBadge, styles.prayerIconBadge]}>
                 <Ionicons name="heart" size={20} color="#ef4444" />
               </View>
-              <Text style={styles.statValue}>{dashboardData?.pendingPrayerRequests || 0}</Text>
+              {isLoading ? (
+                <Skeleton width={40} height={24} borderRadius={6} />
+              ) : (
+                <Text style={styles.statValue}>{dashboardData?.pendingPrayerRequests || 0}</Text>
+              )}
             </View>
             <Text style={styles.statLabel}>Prayer Requests</Text>
           </View>

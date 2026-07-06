@@ -22,10 +22,9 @@ interface Contribution {
 
 interface ContributionSummary {
   totalContributions: number;
-  monthlyAverage: number;
-  annualTotal: number;
-  contributionFrequency: number;
-  monthlyData: { month: string; amount: number }[];
+  monthlyContributions: number;
+  annualContributions: number;
+  contributionFrequency: string;
   contributions: Contribution[];
 }
 
@@ -290,7 +289,7 @@ export default function MemberDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    ${contributions.totalContributions.toLocaleString()}
+                    ${(contributions.totalContributions || 0).toLocaleString()}
                   </div>
                 </CardContent>
               </Card>
@@ -301,7 +300,7 @@ export default function MemberDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    ${contributions.monthlyAverage.toLocaleString()}
+                    ${(contributions.monthlyContributions || 0).toLocaleString()}
                   </div>
                 </CardContent>
               </Card>
@@ -312,7 +311,7 @@ export default function MemberDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    ${contributions.annualTotal.toLocaleString()}
+                    ${(contributions.annualContributions || 0).toLocaleString()}
                   </div>
                 </CardContent>
               </Card>
@@ -330,28 +329,38 @@ export default function MemberDetailPage() {
               </Card>
             </div>
 
-            {contributions.monthlyData && contributions.monthlyData.length > 0 && (
-              <Card className="glass">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    Monthly Contribution Trends
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={contributions.monthlyData}>
-                        <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
-                        <Tooltip formatter={(value: number) => [`$${value.toLocaleString()}`, "Amount"]} />
-                        <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {contributions.contributions && contributions.contributions.length > 0 && (() => {
+              const monthlyData = contributions.contributions.reduce((acc: Record<string, number>, c: Contribution) => {
+                const month = c.date?.substring(0, 7) || "Unknown";
+                acc[month] = (acc[month] || 0) + (c.amount || 0);
+                return acc;
+              }, {});
+              const chartData = Object.entries(monthlyData)
+                .map(([month, amount]) => ({ month, amount }))
+                .sort((a, b) => a.month.localeCompare(b.month));
+              return chartData.length > 0 ? (
+                <Card className="glass">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Monthly Contribution Trends
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData}>
+                          <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                          <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                          <Tooltip formatter={(value: number) => [`$${value.toLocaleString()}`, "Amount"]} />
+                          <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null;
+            })()}
 
             <Card>
               <CardHeader>
@@ -379,7 +388,7 @@ export default function MemberDetailPage() {
                             })}
                           </td>
                           <td className="p-4">{getTypeBadge(c.type)}</td>
-                          <td className="p-4 font-medium">${c.amount.toLocaleString()}</td>
+                          <td className="p-4 font-medium">${(c.amount || 0).toLocaleString()}</td>
                           <td className="p-4 text-muted-foreground">{c.description || "—"}</td>
                         </tr>
                       ))}

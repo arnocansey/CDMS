@@ -134,10 +134,17 @@ public class UserApprovalService {
             churchSubscriptionRepository.save(subscription);
         }
 
-        String tempPassword = UUID.randomUUID().toString().substring(0, 12);
+        String passwordHash;
+        String requesterMessage = request.getRequesterMessage();
+        if (requesterMessage != null && requesterMessage.startsWith("PASSWORD_HASH:")) {
+            passwordHash = requesterMessage.substring("PASSWORD_HASH:".length());
+        } else {
+            String tempPassword = UUID.randomUUID().toString().substring(0, 12);
+            passwordHash = passwordEncoder.encode(tempPassword);
+        }
         User adminUser = new User();
         adminUser.setEmail(request.getRequesterEmail());
-        adminUser.setPassword(passwordEncoder.encode(tempPassword));
+        adminUser.setPassword(passwordHash);
         adminUser.setFirstName(request.getRequesterName().contains(" ")
                 ? request.getRequesterName().substring(0, request.getRequesterName().indexOf(' '))
                 : request.getRequesterName());

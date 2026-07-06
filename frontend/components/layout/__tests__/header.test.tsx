@@ -41,7 +41,7 @@ describe("Header Component", () => {
 
   it("renders system title", () => {
     render(<Header />);
-    expect(screen.getByText("Church Financial Management System")).toBeInTheDocument();
+    expect(screen.getByText("Church Database Management System")).toBeInTheDocument();
   });
 
   it("renders user initials in avatar", () => {

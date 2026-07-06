@@ -24,9 +24,11 @@ public class ReceiptController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TREASURER')")
     public ResponseEntity<List<ReceiptDto>> getReceiptsByDateRange(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<ReceiptDto> receipts = receiptService.getReceiptsByDateRange(startDate, endDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        List<ReceiptDto> receipts = receiptService.getReceiptsByDateRange(start, end);
         return ResponseEntity.ok(receipts);
     }
 

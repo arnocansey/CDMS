@@ -8,6 +8,8 @@ import com.cdms.entity.User;
 import com.cdms.entity.Role;
 import com.cdms.entity.Event;
 import com.cdms.entity.Announcement;
+import com.cdms.entity.ChurchRegistrationRequest;
+import com.cdms.repository.ChurchRegistrationRequestRepository;
 import com.cdms.repository.ChurchRepository;
 import com.cdms.repository.RoleRepository;
 import com.cdms.repository.UserRepository;
@@ -41,6 +43,7 @@ public class ChurchController {
     private final MemberRepository memberRepository;
     private final EventRepository eventRepository;
     private final AnnouncementRepository announcementRepository;
+    private final ChurchRegistrationRequestRepository churchRegistrationRequestRepository;
 
     public ChurchController(TenantService tenantService,
                             ChurchRepository churchRepository,
@@ -49,7 +52,8 @@ public class ChurchController {
                             PasswordEncoder passwordEncoder,
                             MemberRepository memberRepository,
                             EventRepository eventRepository,
-                            AnnouncementRepository announcementRepository) {
+                            AnnouncementRepository announcementRepository,
+                            ChurchRegistrationRequestRepository churchRegistrationRequestRepository) {
         this.tenantService = tenantService;
         this.churchRepository = churchRepository;
         this.userRepository = userRepository;
@@ -58,6 +62,7 @@ public class ChurchController {
         this.memberRepository = memberRepository;
         this.eventRepository = eventRepository;
         this.announcementRepository = announcementRepository;
+        this.churchRegistrationRequestRepository = churchRegistrationRequestRepository;
     }
 
     @GetMapping("/public/{slug}")
@@ -152,16 +157,24 @@ public class ChurchController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> createChurch(@Valid @RequestBody RegisterRequest request) {
-        Church church = new Church();
-        church.setName(request.getName() != null ? request.getName() : request.getFirstName() + "'s Church");
-
         String email = request.getEmail();
+
+        if (userRepository.existsByEmail(email)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "A user with this email already exists"
+            ));
+        }
 
         if (churchRepository.findByEmail(email).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "A church with this email already exists"
+            ));
+        }
+
+        if (churchRegistrationRequestRepository.findByRequesterEmail(email).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "A registration request for this email is already pending review"
             ));
         }
 
@@ -175,34 +188,24 @@ public class ChurchController {
             counter++;
         }
 
-        church.setSlug(slug);
-        church.setEmail(request.getEmail());
-        church.setPhone(request.getPhone());
-        church.setCity(request.getCity());
-        church.setState(request.getState());
-        church.setEnabled(true);
+        String passwordHash = "PASSWORD_HASH:" + passwordEncoder.encode(request.getPassword());
 
-        Church savedChurch = tenantService.createChurch(church, "Free");
+        ChurchRegistrationRequest registrationRequest = new ChurchRegistrationRequest();
+        registrationRequest.setChurchName(request.getName() != null ? request.getName() : request.getFirstName() + "'s Church");
+        registrationRequest.setChurchSlug(slug);
+        registrationRequest.setChurchEmail(request.getEmail());
+        registrationRequest.setChurchPhone(request.getPhone());
+        registrationRequest.setChurchCity(request.getCity());
+        registrationRequest.setChurchState(request.getState());
+        registrationRequest.setRequesterName(request.getFirstName() + " " + request.getLastName());
+        registrationRequest.setRequesterEmail(request.getEmail());
+        registrationRequest.setRequesterMessage(passwordHash);
+        registrationRequest.setStatus("PENDING");
 
-        User user = new User();
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setChurchId(savedChurch.getId());
-        user.setAccountStatus("APPROVED");
-
-        Role adminRole = roleRepository.findByName(Role.RoleName.ROLE_ADMIN)
-                .orElseThrow(() -> new RuntimeException("Admin role not found"));
-        Set<Role> roles = new HashSet<>();
-        roles.add(adminRole);
-        user.setRoles(roles);
-
-        userRepository.save(user);
+        churchRegistrationRequestRepository.save(registrationRequest);
 
         return ResponseEntity.ok(Map.of(
-                "church", savedChurch,
-                "message", "Church registered successfully"
+                "message", "Registration request submitted successfully! A platform admin will review it."
         ));
     }
 }

@@ -35,9 +35,11 @@ public class EventController {
 
     @GetMapping("/range")
     public ResponseEntity<List<EventDto>> getEventsByDateRange(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<EventDto> events = eventService.getEventsByDateRange(startDate, endDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        List<EventDto> events = eventService.getEventsByDateRange(start, end);
         return ResponseEntity.ok(events);
     }
 

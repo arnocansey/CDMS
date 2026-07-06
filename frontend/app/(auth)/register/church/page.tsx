@@ -58,7 +58,7 @@ export default function ChurchRegistrationPage() {
         city: data.city,
         state: data.state,
       });
-      toast.success("Church registered! You can now sign in.");
+      toast.success("Registration request submitted! A platform admin will review it.");
       router.push("/login");
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Registration failed");
