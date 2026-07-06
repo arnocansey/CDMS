@@ -114,6 +114,7 @@ public class ExpenseApprovalService {
 
         for (User admin : admins) {
             notificationService.createNotification(
+                    admin.getChurchId(),
                     admin.getId(),
                     "Expense Pending Approval",
                     String.format("An expense of $%s for %s requires your approval.",

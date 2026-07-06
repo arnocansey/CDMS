@@ -36,10 +36,16 @@ public class NotificationService {
     }
 
     @Transactional
-    public NotificationDto createNotification(Long userId, String title, String message, String type) {
+    public NotificationDto createNotification(Long churchId, Long userId, String title, String message, String type) {
         Notification notification = new Notification(userId, title, message, type);
+        notification.setChurchId(churchId != null ? churchId : 1L);
         Notification savedNotification = notificationRepository.save(notification);
         return mapToDto(savedNotification);
+    }
+
+    @Transactional
+    public NotificationDto createNotification(Long userId, String title, String message, String type) {
+        return createNotification(1L, userId, title, message, type);
     }
 
     @Transactional

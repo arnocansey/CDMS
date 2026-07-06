@@ -6,6 +6,10 @@ import com.cdms.entity.Department;
 import com.cdms.entity.User;
 import com.cdms.exception.BadRequestException;
 import com.cdms.exception.ResourceNotFoundException;
+import com.cdms.entity.Branch;
+import com.cdms.entity.Role;
+import com.cdms.repository.BranchRepository;
+import com.cdms.repository.DistrictRepository;
 import com.cdms.repository.MemberRepository;
 import com.cdms.repository.DepartmentRepository;
 import com.cdms.repository.UserRepository;
@@ -18,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.cdms.security.TenantContext;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class MemberService {
@@ -27,22 +32,84 @@ public class MemberService {
     private final UserRepository userRepository;
     private final AuditLogService auditLogService;
 
+    private final BranchRepository branchRepository;
+    private final DistrictRepository districtRepository;
+
     public MemberService(MemberRepository memberRepository, DepartmentRepository departmentRepository,
-                        UserRepository userRepository, AuditLogService auditLogService) {
+                        UserRepository userRepository, AuditLogService auditLogService,
+                        BranchRepository branchRepository, DistrictRepository districtRepository) {
         this.memberRepository = memberRepository;
         this.departmentRepository = departmentRepository;
         this.userRepository = userRepository;
         this.auditLogService = auditLogService;
+        this.branchRepository = branchRepository;
+        this.districtRepository = districtRepository;
+    }
+
+    private User getCurrentUserEntity() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() != null) {
+            String email;
+            if (auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+                email = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            } else if (auth.getPrincipal() instanceof String) {
+                email = (String) auth.getPrincipal();
+            } else {
+                return null;
+            }
+            return userRepository.findByEmail(email).orElse(null);
+        }
+        return null;
+    }
+
+    private Page<Member> getScopedMembers(String search, Pageable pageable) {
+        Long churchId = TenantContext.getChurchId();
+        User currentUser = getCurrentUserEntity();
+
+        if (currentUser == null) {
+            return Page.empty();
+        }
+
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName() == Role.RoleName.ROLE_ADMIN);
+        boolean isPastor = currentUser.getRoles().stream().anyMatch(r -> r.getName() == Role.RoleName.ROLE_PASTOR);
+
+        if (isAdmin) {
+            if (search != null && !search.isEmpty()) {
+                return memberRepository.searchMembersByChurchId(churchId, search, pageable);
+            } else {
+                return memberRepository.findByChurchId(churchId, pageable);
+            }
+        } else if (isPastor && currentUser.getDistrictId() != null) {
+            List<Long> branchIds = branchRepository.findByDistrictId(currentUser.getDistrictId()).stream()
+                    .map(Branch::getId)
+                    .toList();
+            if (branchIds.isEmpty()) {
+                return Page.empty();
+            }
+            if (search != null && !search.isEmpty()) {
+                return memberRepository.searchByBranchIds(branchIds, search, pageable);
+            } else {
+                return memberRepository.findByBranchIdIn(branchIds, pageable);
+            }
+        } else if (currentUser.getBranchId() != null) {
+            if (search != null && !search.isEmpty()) {
+                return memberRepository.searchByBranchId(currentUser.getBranchId(), search, pageable);
+            } else {
+                return memberRepository.findByBranchId(currentUser.getBranchId(), pageable);
+            }
+        }
+
+        return Page.empty();
     }
 
     @Transactional(readOnly = true)
     public Page<MemberDto> getAllMembers(Pageable pageable) {
-        return memberRepository.findAll(pageable).map(this::mapToDto);
+        return getScopedMembers(null, pageable).map(this::mapToDto);
     }
 
     @Transactional(readOnly = true)
     public Page<MemberDto> searchMembers(String search, Pageable pageable) {
-        return memberRepository.searchMembers(search, pageable).map(this::mapToDto);
+        return getScopedMembers(search, pageable).map(this::mapToDto);
     }
 
     @Transactional(readOnly = true)
@@ -74,6 +141,8 @@ public class MemberService {
         member.setBaptismDate(memberDto.getBaptismDate());
         member.setPhotoUrl(memberDto.getPhotoUrl());
         member.setActive(memberDto.isActive());
+        member.setBranchId(memberDto.getBranchId());
+        member.setDistrictId(memberDto.getDistrictId());
 
         if (memberDto.getDepartmentId() != null) {
             Department department = departmentRepository.findById(memberDto.getDepartmentId())
@@ -107,6 +176,8 @@ public class MemberService {
         member.setBaptismDate(memberDto.getBaptismDate());
         member.setPhotoUrl(memberDto.getPhotoUrl());
         member.setActive(memberDto.isActive());
+        member.setBranchId(memberDto.getBranchId());
+        member.setDistrictId(memberDto.getDistrictId());
 
         if (memberDto.getDepartmentId() != null) {
             Department department = departmentRepository.findById(memberDto.getDepartmentId())
@@ -153,6 +224,18 @@ public class MemberService {
         if (member.getDepartment() != null) {
             dto.setDepartmentId(member.getDepartment().getId());
             dto.setDepartmentName(member.getDepartment().getName());
+        }
+        dto.setBranchId(member.getBranchId());
+        dto.setDistrictId(member.getDistrictId());
+        if (member.getBranchId() != null) {
+            branchRepository.findById(member.getBranchId()).ifPresent(b -> {
+                dto.setBranchName(b.getName());
+            });
+        }
+        if (member.getDistrictId() != null) {
+            districtRepository.findById(member.getDistrictId()).ifPresent(d -> {
+                dto.setDistrictName(d.getName());
+            });
         }
         return dto;
     }

@@ -35,6 +35,10 @@ public class MemberDto {
     private boolean active = true;
     private Long departmentId;
     private String departmentName;
+    private Long branchId;
+    private String branchName;
+    private Long districtId;
+    private String districtName;
 
     public MemberDto() {}
 
@@ -72,4 +76,12 @@ public class MemberDto {
     public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
     public String getDepartmentName() { return departmentName; }
     public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
+    public Long getBranchId() { return branchId; }
+    public void setBranchId(Long branchId) { this.branchId = branchId; }
+    public String getBranchName() { return branchName; }
+    public void setBranchName(String branchName) { this.branchName = branchName; }
+    public Long getDistrictId() { return districtId; }
+    public void setDistrictId(Long districtId) { this.districtId = districtId; }
+    public String getDistrictName() { return districtName; }
+    public void setDistrictName(String districtName) { this.districtName = districtName; }
 }

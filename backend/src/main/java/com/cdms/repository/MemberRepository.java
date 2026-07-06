@@ -41,4 +41,14 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     
     @Query("SELECT m FROM Member m WHERE m.churchId = :churchId AND m.department.id = :departmentId")
     List<Member> findByChurchIdAndDepartmentId(@Param("churchId") Long churchId, @Param("departmentId") Long departmentId);
+
+    Page<Member> findByBranchId(Long branchId, Pageable pageable);
+
+    Page<Member> findByBranchIdIn(List<Long> branchIds, Pageable pageable);
+
+    @Query("SELECT m FROM Member m WHERE m.branchId = :branchId AND (LOWER(m.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(m.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(m.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Member> searchByBranchId(@Param("branchId") Long branchId, @Param("search") String search, Pageable pageable);
+
+    @Query("SELECT m FROM Member m WHERE m.branchId IN :branchIds AND (LOWER(m.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(m.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(m.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Member> searchByBranchIds(@Param("branchIds") List<Long> branchIds, @Param("search") String search, Pageable pageable);
 }

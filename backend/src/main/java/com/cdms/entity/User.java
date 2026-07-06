@@ -16,6 +16,14 @@ public class User {
     @JoinColumn(name = "church_id")
     private Church church;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "district_id")
+    private District district;
+
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -86,6 +94,30 @@ public class User {
         if (churchId != null) {
             this.church = new Church();
             this.church.setId(churchId);
+        } else {
+            this.church = null;
+        }
+    }
+    public Branch getBranch() { return branch; }
+    public void setBranch(Branch branch) { this.branch = branch; }
+    public Long getBranchId() { return branch != null ? branch.getId() : null; }
+    public void setBranchId(Long branchId) {
+        if (branchId != null) {
+            this.branch = new Branch();
+            this.branch.setId(branchId);
+        } else {
+            this.branch = null;
+        }
+    }
+    public District getDistrict() { return district; }
+    public void setDistrict(District district) { this.district = district; }
+    public Long getDistrictId() { return district != null ? district.getId() : null; }
+    public void setDistrictId(Long districtId) {
+        if (districtId != null) {
+            this.district = new District();
+            this.district.setId(districtId);
+        } else {
+            this.district = null;
         }
     }
     public String getEmail() { return email; }

@@ -30,7 +30,25 @@ import {
   fetchTopContributors,
   fetchAuditLogs,
   fetchNotifications,
+  fetchBranches,
+  fetchDistricts,
 } from "@/lib/api-functions"
+
+export function useBranches() {
+  return useQuery({
+    queryKey: ["branches"],
+    queryFn: fetchBranches,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useDistricts() {
+  return useQuery({
+    queryKey: ["districts"],
+    queryFn: fetchDistricts,
+    staleTime: 5 * 60 * 1000,
+  })
+}
 
 export function useMembers(params?: { page?: number; size?: number; search?: string }) {
   return useQuery({

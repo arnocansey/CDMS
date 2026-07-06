@@ -3,6 +3,8 @@ package com.cdms.service;
 import com.cdms.dto.MemberDto;
 import com.cdms.entity.Member;
 import com.cdms.exception.ResourceNotFoundException;
+import com.cdms.repository.BranchRepository;
+import com.cdms.repository.DistrictRepository;
 import com.cdms.repository.MemberRepository;
 import com.cdms.repository.DepartmentRepository;
 import com.cdms.repository.UserRepository;
@@ -37,6 +39,12 @@ class MemberServiceTest {
 
     @Mock
     private AuditLogService auditLogService;
+
+    @Mock
+    private BranchRepository branchRepository;
+
+    @Mock
+    private DistrictRepository districtRepository;
 
     @InjectMocks
     private MemberService memberService;

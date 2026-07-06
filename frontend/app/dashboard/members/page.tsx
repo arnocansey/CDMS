@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
-import { useMembers, useDepartments } from "@/hooks/use-queries";
+import { useMembers, useDepartments, useBranches } from "@/hooks/use-queries";
 import api from "@/lib/api";
 import { memberSchema, type MemberFormData } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ export default function MembersPage() {
 
   const { data, isLoading: isDataLoading, isError } = useMembers(searchParams);
   const { data: departments = [] } = useDepartments();
+  const { data: branches = [] } = useBranches();
   const members = data?.content ?? [];
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<MemberFormData>({
@@ -78,6 +79,7 @@ export default function MembersPage() {
         photoUrl: editingMember.photoUrl ?? "",
         active: editingMember.active ?? true,
         departmentId: editingMember.departmentId ?? undefined,
+        branchId: editingMember.branchId ?? undefined,
       });
     } else {
       reset({
@@ -96,6 +98,7 @@ export default function MembersPage() {
         photoUrl: "",
         active: true,
         departmentId: undefined,
+        branchId: undefined,
       });
     }
   }, [editingMember, reset]);
@@ -155,6 +158,7 @@ export default function MembersPage() {
       photoUrl: "",
       active: true,
       departmentId: undefined,
+      branchId: undefined,
     });
     setDialogOpen(true);
   };
@@ -256,6 +260,7 @@ export default function MembersPage() {
                   <th className="p-4 text-left font-medium">Phone</th>
                   <th className="p-4 text-left font-medium">Gender</th>
                   <th className="p-4 text-left font-medium">Department</th>
+                  <th className="p-4 text-left font-medium">Branch</th>
                   <th className="p-4 text-left font-medium">Status</th>
                   <th className="p-4 text-left font-medium">Actions</th>
                 </tr>
@@ -275,6 +280,7 @@ export default function MembersPage() {
                     <td className="p-4">{member.phone || "—"}</td>
                     <td className="p-4">{member.gender?.replace("_", " ") || "—"}</td>
                     <td className="p-4">{member.departmentName || "—"}</td>
+                    <td className="p-4">{member.branchName || "—"}</td>
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -375,7 +381,7 @@ export default function MembersPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="dateOfBirth">Date of Birth</Label>
                 <Input id="dateOfBirth" type="date" {...register("dateOfBirth")} />
@@ -387,6 +393,17 @@ export default function MembersPage() {
                   <SelectContent>
                     {(departments as any[]).map((d: any) => (
                       <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Branch</Label>
+                <Select onValueChange={(v) => setValue("branchId", parseInt(v), { shouldValidate: true })} defaultValue={editingMember?.branchId?.toString()}>
+                  <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
+                  <SelectContent>
+                    {(branches as any[]).map((b: any) => (
+                      <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

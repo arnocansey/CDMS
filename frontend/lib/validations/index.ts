@@ -16,6 +16,8 @@ export const memberSchema = z.object({
   photoUrl: z.string().optional(),
   active: z.boolean().optional(),
   departmentId: z.number().optional(),
+  branchId: z.number().optional(),
+  districtId: z.number().optional(),
 })
 
 export type MemberFormData = z.infer<typeof memberSchema>
@@ -53,6 +55,7 @@ export const donationSchema = z.object({
   donationDate: z.string().min(1, "Date is required"),
   paymentMethod: z.enum(["CASH", "CHECK", "BANK_TRANSFER", "CARD", "MOBILE"]).optional(),
   referenceNumber: z.string().optional(),
+  branchId: z.number().optional(),
 })
 
 export type DonationFormData = z.infer<typeof donationSchema>
@@ -63,6 +66,7 @@ export const titheSchema = z.object({
   titheDate: z.string().min(1, "Date is required"),
   paymentMethod: z.enum(["CASH", "CHECK", "BANK_TRANSFER", "CARD", "MOBILE"]).optional(),
   referenceNumber: z.string().optional(),
+  branchId: z.number().optional(),
 })
 
 export type TitheFormData = z.infer<typeof titheSchema>
@@ -75,6 +79,7 @@ export const offeringSchema = z.object({
   amount: z.number().positive("Amount must be positive"),
   offeringType: z.enum(["GENERAL", "THANKSGIVING", "SEED", "MISCELLANEOUS"]).optional(),
   description: z.string().optional(),
+  branchId: z.number().optional(),
 })
 
 export type OfferingFormData = z.infer<typeof offeringSchema>
@@ -89,6 +94,7 @@ export const expenseSchema = z.object({
   expenseDate: z.string().min(1, "Date is required"),
   paymentMethod: z.enum(["CASH", "CHECK", "BANK_TRANSFER", "CARD", "MOBILE"]).optional(),
   approvedBy: z.string().optional(),
+  branchId: z.number().optional(),
 })
 
 export type ExpenseFormData = z.infer<typeof expenseSchema>
@@ -104,6 +110,7 @@ export const budgetSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   notes: z.string().optional(),
+  branchId: z.number().optional(),
 })
 
 export type BudgetFormData = z.infer<typeof budgetSchema>

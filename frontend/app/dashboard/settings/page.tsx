@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Save, Upload, Settings } from "lucide-react";
+import Link from "next/link";
+import { Save, Upload, Settings, Church } from "lucide-react";
 
 const currencies = ["USD", "EUR", "GBP", "NGN", "GHS", "KES", "ZAR", "INR", "CAD", "AUD"];
 
@@ -127,10 +128,18 @@ export default function ChurchSettingsPage() {
           <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Church Settings</h2>
           <p className="text-muted-foreground">Configure your church information and preferences</p>
         </div>
-        <Button onClick={handleSave} disabled={saving}>
-          <Save className="mr-2 h-4 w-4" />
-          {saving ? "Saving..." : "Save Settings"}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/settings/branches">
+              <Church className="mr-2 h-4 w-4" />
+              Branches & Districts
+            </Link>
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            <Save className="mr-2 h-4 w-4" />
+            {saving ? "Saving..." : "Save Settings"}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
-import { useFinancialData, useMembers } from "@/hooks/use-queries";
+import { useFinancialData, useMembers, useBranches } from "@/hooks/use-queries";
 import api from "@/lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
@@ -335,6 +335,8 @@ function TransactionDialog({
   onTabChange: (tab: TransactionTab) => void;
   members: any[];
 }) {
+  const { data: branches = [] } = useBranches();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -349,17 +351,18 @@ function TransactionDialog({
             <TabsTrigger value="offering">Offering</TabsTrigger>
             <TabsTrigger value="expense">Expense</TabsTrigger>
           </TabsList>
+
           <TabsContent value="donation">
-            <DonationForm onSuccess={() => onOpenChange(false)} members={members} />
+            <DonationForm onSuccess={() => onOpenChange(false)} members={members} branches={branches} />
           </TabsContent>
           <TabsContent value="tithe">
-            <TitheForm onSuccess={() => onOpenChange(false)} members={members} />
+            <TitheForm onSuccess={() => onOpenChange(false)} members={members} branches={branches} />
           </TabsContent>
           <TabsContent value="offering">
-            <OfferingForm onSuccess={() => onOpenChange(false)} />
+            <OfferingForm onSuccess={() => onOpenChange(false)} branches={branches} />
           </TabsContent>
           <TabsContent value="expense">
-            <ExpenseForm onSuccess={() => onOpenChange(false)} />
+            <ExpenseForm onSuccess={() => onOpenChange(false)} branches={branches} />
           </TabsContent>
         </Tabs>
       </DialogContent>
@@ -367,8 +370,8 @@ function TransactionDialog({
   );
 }
 
-function DonationForm({ onSuccess, members }: { onSuccess: () => void; members: any[] }) {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<DonationFormData>({
+function DonationForm({ onSuccess, members, branches }: { onSuccess: () => void; members: any[]; branches: any[] }) {
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<DonationFormData>({
     resolver: zodResolver(donationSchema),
     defaultValues: { donationDate: new Date().toISOString().split("T")[0] },
   });
@@ -391,18 +394,31 @@ function DonationForm({ onSuccess, members }: { onSuccess: () => void; members: 
         <Input type="number" step="0.01" placeholder="0.00" {...register("amount", { valueAsNumber: true })} />
         {errors.amount && <p className="text-sm text-red-500">{errors.amount.message}</p>}
       </div>
-      <div className="space-y-2">
-        <Label>Category</Label>
-        <Select onValueChange={(v) => {}}>
-          <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="GENERAL">General</SelectItem>
-            <SelectItem value="BUILDING_FUND">Building Fund</SelectItem>
-            <SelectItem value="WELFARE">Welfare</SelectItem>
-            <SelectItem value="SPECIAL">Special</SelectItem>
-          </SelectContent>
-        </Select>
-        {errors.category && <p className="text-sm text-red-500">{errors.category.message}</p>}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Select onValueChange={(v) => setValue("category", v as any, { shouldValidate: true })}>
+            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="GENERAL">General</SelectItem>
+              <SelectItem value="BUILDING_FUND">Building Fund</SelectItem>
+              <SelectItem value="WELFARE">Welfare</SelectItem>
+              <SelectItem value="SPECIAL">Special</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.category && <p className="text-sm text-red-500">{errors.category.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label>Branch</Label>
+          <Select onValueChange={(v) => setValue("branchId", parseInt(v), { shouldValidate: true })}>
+            <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
+            <SelectContent>
+              {branches.map((b) => (
+                <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div className="space-y-2">
         <Label>Date</Label>
@@ -411,7 +427,7 @@ function DonationForm({ onSuccess, members }: { onSuccess: () => void; members: 
       </div>
       <div className="space-y-2">
         <Label>Payment Method</Label>
-        <Select onValueChange={(v) => {}}>
+        <Select onValueChange={(v) => setValue("paymentMethod", v as any)}>
           <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="CASH">Cash</SelectItem>
@@ -433,7 +449,7 @@ function DonationForm({ onSuccess, members }: { onSuccess: () => void; members: 
   );
 }
 
-function TitheForm({ onSuccess, members }: { onSuccess: () => void; members: any[] }) {
+function TitheForm({ onSuccess, members, branches }: { onSuccess: () => void; members: any[]; branches: any[] }) {
   const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<TitheFormData>({
     resolver: zodResolver(titheSchema),
     defaultValues: { titheDate: new Date().toISOString().split("T")[0] },
@@ -452,17 +468,30 @@ function TitheForm({ onSuccess, members }: { onSuccess: () => void; members: any
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
-      <div className="space-y-2">
-        <Label>Member</Label>
-        <Select onValueChange={(v) => setValue("memberId", parseInt(v), { shouldValidate: true })}>
-          <SelectTrigger><SelectValue placeholder="Select member" /></SelectTrigger>
-          <SelectContent>
-            {members.map((m: any) => (
-              <SelectItem key={m.id} value={String(m.id)}>{m.firstName} {m.lastName}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {errors.memberId && <p className="text-sm text-red-500">{errors.memberId.message}</p>}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Member</Label>
+          <Select onValueChange={(v) => setValue("memberId", parseInt(v), { shouldValidate: true })}>
+            <SelectTrigger><SelectValue placeholder="Select member" /></SelectTrigger>
+            <SelectContent>
+              {members.map((m: any) => (
+                <SelectItem key={m.id} value={String(m.id)}>{m.firstName} {m.lastName}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.memberId && <p className="text-sm text-red-500">{errors.memberId.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label>Branch</Label>
+          <Select onValueChange={(v) => setValue("branchId", parseInt(v), { shouldValidate: true })}>
+            <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
+            <SelectContent>
+              {branches.map((b) => (
+                <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div className="space-y-2">
         <Label>Amount ($)</Label>
@@ -476,7 +505,7 @@ function TitheForm({ onSuccess, members }: { onSuccess: () => void; members: any
       </div>
       <div className="space-y-2">
         <Label>Payment Method</Label>
-        <Select onValueChange={(v) => {}}>
+        <Select onValueChange={(v) => setValue("paymentMethod", v as any)}>
           <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="CASH">Cash</SelectItem>
@@ -494,8 +523,8 @@ function TitheForm({ onSuccess, members }: { onSuccess: () => void; members: any
   );
 }
 
-function OfferingForm({ onSuccess }: { onSuccess: () => void }) {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<OfferingFormData>({
+function OfferingForm({ onSuccess, branches }: { onSuccess: () => void; branches: any[] }) {
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<OfferingFormData>({
     resolver: zodResolver(offeringSchema),
     defaultValues: { serviceDate: new Date().toISOString().split("T")[0] },
   });
@@ -513,19 +542,32 @@ function OfferingForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
-      <div className="space-y-2">
-        <Label>Service Type</Label>
-        <Select onValueChange={(v) => {}}>
-          <SelectTrigger><SelectValue placeholder="Select service" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="SUNDAY">Sunday</SelectItem>
-            <SelectItem value="WEDNESDAY">Wednesday</SelectItem>
-            <SelectItem value="FRIDAY">Friday</SelectItem>
-            <SelectItem value="SPECIAL">Special</SelectItem>
-            <SelectItem value="OTHER">Other</SelectItem>
-          </SelectContent>
-        </Select>
-        {errors.serviceType && <p className="text-sm text-red-500">{errors.serviceType.message}</p>}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Service Type</Label>
+          <Select onValueChange={(v) => setValue("serviceType", v as any, { shouldValidate: true })}>
+            <SelectTrigger><SelectValue placeholder="Select service" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="SUNDAY">Sunday</SelectItem>
+              <SelectItem value="WEDNESDAY">Wednesday</SelectItem>
+              <SelectItem value="FRIDAY">Friday</SelectItem>
+              <SelectItem value="SPECIAL">Special</SelectItem>
+              <SelectItem value="OTHER">Other</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.serviceType && <p className="text-sm text-red-500">{errors.serviceType.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label>Branch</Label>
+          <Select onValueChange={(v) => setValue("branchId", parseInt(v), { shouldValidate: true })}>
+            <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
+            <SelectContent>
+              {branches.map((b) => (
+                <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div className="space-y-2">
         <Label>Amount ($)</Label>
@@ -539,7 +581,7 @@ function OfferingForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
       <div className="space-y-2">
         <Label>Offering Type</Label>
-        <Select onValueChange={(v) => {}}>
+        <Select onValueChange={(v) => setValue("offeringType", v as any)}>
           <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="GENERAL">General</SelectItem>
@@ -560,8 +602,8 @@ function OfferingForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-function ExpenseForm({ onSuccess }: { onSuccess: () => void }) {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ExpenseFormData>({
+function ExpenseForm({ onSuccess, branches }: { onSuccess: () => void; branches: any[] }) {
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
     defaultValues: { expenseDate: new Date().toISOString().split("T")[0] },
   });
@@ -579,22 +621,35 @@ function ExpenseForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
-      <div className="space-y-2">
-        <Label>Category</Label>
-        <Select onValueChange={(v) => {}}>
-          <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="UTILITIES">Utilities</SelectItem>
-            <SelectItem value="SALARIES">Salaries</SelectItem>
-            <SelectItem value="EVANGELISM">Evangelism</SelectItem>
-            <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-            <SelectItem value="EQUIPMENT">Equipment</SelectItem>
-            <SelectItem value="TRANSPORTATION">Transportation</SelectItem>
-            <SelectItem value="WELFARE">Welfare</SelectItem>
-            <SelectItem value="MISCELLANEOUS">Miscellaneous</SelectItem>
-          </SelectContent>
-        </Select>
-        {errors.category && <p className="text-sm text-red-500">{errors.category.message}</p>}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Select onValueChange={(v) => setValue("category", v as any, { shouldValidate: true })}>
+            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="UTILITIES">Utilities</SelectItem>
+              <SelectItem value="SALARIES">Salaries</SelectItem>
+              <SelectItem value="EVANGELISM">Evangelism</SelectItem>
+              <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+              <SelectItem value="EQUIPMENT">Equipment</SelectItem>
+              <SelectItem value="TRANSPORTATION">Transportation</SelectItem>
+              <SelectItem value="WELFARE">Welfare</SelectItem>
+              <SelectItem value="MISCELLANEOUS">Miscellaneous</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.category && <p className="text-sm text-red-500">{errors.category.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label>Branch</Label>
+          <Select onValueChange={(v) => setValue("branchId", parseInt(v), { shouldValidate: true })}>
+            <SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
+            <SelectContent>
+              {branches.map((b) => (
+                <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div className="space-y-2">
         <Label>Amount ($)</Label>
@@ -608,7 +663,7 @@ function ExpenseForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
       <div className="space-y-2">
         <Label>Payment Method</Label>
-        <Select onValueChange={(v) => {}}>
+        <Select onValueChange={(v) => setValue("paymentMethod", v as any)}>
           <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="CASH">Cash</SelectItem>

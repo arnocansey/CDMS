@@ -14,6 +14,12 @@ public class Member {
     @Column(name = "church_id", nullable = false)
     private Long churchId;
 
+    @Column(name = "branch_id")
+    private Long branchId;
+
+    @Column(name = "district_id")
+    private Long districtId;
+
     @Column(nullable = false)
     private String firstName;
 
@@ -121,6 +127,10 @@ public class Member {
     public void setActive(boolean active) { this.active = active; }
     public Department getDepartment() { return department; }
     public void setDepartment(Department department) { this.department = department; }
+    public Long getBranchId() { return branchId; }
+    public void setBranchId(Long branchId) { this.branchId = branchId; }
+    public Long getDistrictId() { return districtId; }
+    public void setDistrictId(Long districtId) { this.districtId = districtId; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

@@ -9,6 +9,8 @@ import com.cdms.entity.SubscriptionPlan;
 import com.cdms.entity.User;
 import com.cdms.exception.BadRequestException;
 import com.cdms.exception.ResourceNotFoundException;
+import com.cdms.entity.Branch;
+import com.cdms.repository.BranchRepository;
 import com.cdms.repository.ChurchRepository;
 import com.cdms.repository.ChurchSubscriptionRepository;
 import com.cdms.repository.ChurchRegistrationRequestRepository;
@@ -35,7 +37,8 @@ public class UserApprovalService {
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
-
+    private final BranchRepository branchRepository;
+ 
     public UserApprovalService(UserRepository userRepository,
                                ChurchRepository churchRepository,
                                ChurchSubscriptionRepository churchSubscriptionRepository,
@@ -43,7 +46,8 @@ public class UserApprovalService {
                                RoleRepository roleRepository,
                                SubscriptionPlanRepository subscriptionPlanRepository,
                                PasswordEncoder passwordEncoder,
-                               NotificationService notificationService) {
+                               NotificationService notificationService,
+                               BranchRepository branchRepository) {
         this.userRepository = userRepository;
         this.churchRepository = churchRepository;
         this.churchSubscriptionRepository = churchSubscriptionRepository;
@@ -52,6 +56,7 @@ public class UserApprovalService {
         this.subscriptionPlanRepository = subscriptionPlanRepository;
         this.passwordEncoder = passwordEncoder;
         this.notificationService = notificationService;
+        this.branchRepository = branchRepository;
     }
 
     public List<UserDto> getPendingUsers(Long churchId) {
@@ -70,6 +75,7 @@ public class UserApprovalService {
 
         if (savedUser.getChurchId() != null) {
             notificationService.createNotification(
+                    savedUser.getChurchId(),
                     savedUser.getId(),
                     "Account Approved",
                     "Your account has been approved. You now have full access to the system.",
@@ -92,6 +98,7 @@ public class UserApprovalService {
         }
 
         notificationService.createNotification(
+                savedUser.getChurchId() != null ? savedUser.getChurchId() : 1L,
                 savedUser.getId(),
                 "Account Rejected",
                 message,
@@ -134,6 +141,15 @@ public class UserApprovalService {
             churchSubscriptionRepository.save(subscription);
         }
 
+        Branch hqBranch = new Branch();
+        hqBranch.setChurchId(savedChurch.getId());
+        hqBranch.setName(savedChurch.getName() + " Headquarters");
+        hqBranch.setCode("HQ");
+        hqBranch.setEnabled(true);
+        hqBranch.setCity(savedChurch.getCity());
+        hqBranch.setState(savedChurch.getState());
+        Branch savedHq = branchRepository.save(hqBranch);
+
         String passwordHash;
         String requesterMessage = request.getRequesterMessage();
         if (requesterMessage != null && requesterMessage.startsWith("PASSWORD_HASH:")) {
@@ -152,8 +168,9 @@ public class UserApprovalService {
                 ? request.getRequesterName().substring(request.getRequesterName().indexOf(' ') + 1)
                 : "");
         adminUser.setChurch(savedChurch);
+        adminUser.setBranch(savedHq);
         adminUser.setAccountStatus("APPROVED");
-
+ 
         Role adminRole = roleRepository.findByName(Role.RoleName.ROLE_ADMIN)
                 .orElseThrow(() -> new BadRequestException("ADMIN role not found"));
         Set<Role> roles = new HashSet<>();
@@ -180,10 +197,10 @@ public class UserApprovalService {
         request.setReviewedAt(java.time.LocalDateTime.now());
         churchRegistrationRequestRepository.save(request);
 
+        User requester = userRepository.findByEmail(request.getRequesterEmail()).orElse(null);
         notificationService.createNotification(
-                userRepository.findByEmail(request.getRequesterEmail())
-                        .map(User::getId)
-                        .orElse(0L),
+                requester != null && requester.getChurchId() != null ? requester.getChurchId() : 1L,
+                requester != null ? requester.getId() : 0L,
                 "Church Registration Rejected",
                 "Your church registration request has been rejected." +
                         (reason != null && !reason.isEmpty() ? " Reason: " + reason : ""),

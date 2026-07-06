@@ -179,6 +179,16 @@ export async function fetchNotifications() {
   return response.data
 }
 
+export async function fetchBranches() {
+  const response = await api.get("/branches")
+  return response.data
+}
+
+export async function fetchDistricts() {
+  const response = await api.get("/districts")
+  return response.data
+}
+
 export const churchSettingsApi = {
   get: () => api.get("/church-settings"),
   update: (data: any) => api.put("/church-settings", data),
