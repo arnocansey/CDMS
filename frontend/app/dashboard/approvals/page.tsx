@@ -7,6 +7,8 @@ import {
   useApproveUser,
   useRejectUser,
   useChurchRequests,
+  useApproveChurchRequest,
+  useRejectChurchRequest,
 } from "@/hooks/use-queries";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,9 +34,12 @@ export default function ApprovalsPage() {
   const { data: churchRequests, isLoading: loadingRequests } = useChurchRequests();
   const approveUser = useApproveUser();
   const rejectUser = useRejectUser();
+  const approveChurch = useApproveChurchRequest();
+  const rejectChurch = useRejectChurchRequest();
 
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectingUserId, setRejectingUserId] = useState<number | null>(null);
+  const [rejectingChurchId, setRejectingChurchId] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
   const handleApprove = async (userId: number) => {
@@ -46,16 +51,36 @@ export default function ApprovalsPage() {
     }
   };
 
-  const handleReject = async () => {
-    if (!rejectingUserId) return;
+  const handleApproveChurch = async (requestId: number) => {
     try {
-      await rejectUser.mutateAsync({ userId: rejectingUserId, reason: rejectionReason });
-      toast.success("User rejected");
-      setRejectDialogOpen(false);
-      setRejectingUserId(null);
-      setRejectionReason("");
+      await approveChurch.mutateAsync(requestId);
+      toast.success("Church request approved successfully");
     } catch {
-      toast.error("Failed to reject user");
+      toast.error("Failed to approve church request");
+    }
+  };
+
+  const handleReject = async () => {
+    if (rejectingUserId) {
+      try {
+        await rejectUser.mutateAsync({ userId: rejectingUserId, reason: rejectionReason });
+        toast.success("User rejected");
+        setRejectDialogOpen(false);
+        setRejectingUserId(null);
+        setRejectionReason("");
+      } catch {
+        toast.error("Failed to reject user");
+      }
+    } else if (rejectingChurchId) {
+      try {
+        await rejectChurch.mutateAsync({ requestId: rejectingChurchId, reason: rejectionReason });
+        toast.success("Church request rejected");
+        setRejectDialogOpen(false);
+        setRejectingChurchId(null);
+        setRejectionReason("");
+      } catch {
+        toast.error("Failed to reject church request");
+      }
     }
   };
 
@@ -172,12 +197,12 @@ export default function ApprovalsPage() {
                   <tbody>
                     {churchRequests.map((req: any) => (
                       <tr key={req.id} className="border-b last:border-0">
-                        <td className="py-3 font-medium">{req.name}</td>
+                        <td className="py-3 font-medium">{req.churchName || req.name}</td>
                         <td className="py-3 text-muted-foreground">
                           {req.requesterName || "—"}
                         </td>
-                        <td className="py-3 text-muted-foreground">{req.city}</td>
-                        <td className="py-3 text-muted-foreground">{req.state}</td>
+                        <td className="py-3 text-muted-foreground">{req.churchCity || req.city || "—"}</td>
+                        <td className="py-3 text-muted-foreground">{req.churchState || req.state || "—"}</td>
                         <td className="py-3">
                           <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                             {req.status}
@@ -185,11 +210,24 @@ export default function ApprovalsPage() {
                         </td>
                         <td className="py-3 text-right">
                           <div className="flex justify-end gap-2">
-                            <Button size="sm" variant="default">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleApproveChurch(req.id)}
+                              disabled={approveChurch.isPending}
+                            >
                               <Check className="mr-1 h-3 w-3" />
                               Approve
                             </Button>
-                            <Button size="sm" variant="destructive">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                setRejectingChurchId(req.id);
+                                setRejectDialogOpen(true);
+                              }}
+                              disabled={rejectChurch.isPending}
+                            >
                               <X className="mr-1 h-3 w-3" />
                               Reject
                             </Button>
@@ -209,7 +247,7 @@ export default function ApprovalsPage() {
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject User</DialogTitle>
+            <DialogTitle>{rejectingChurchId ? "Reject Church Request" : "Reject User"}</DialogTitle>
             <DialogDescription>
               Provide a reason for rejecting this registration. This will be sent
               to the user.
@@ -233,6 +271,7 @@ export default function ApprovalsPage() {
               onClick={() => {
                 setRejectDialogOpen(false);
                 setRejectingUserId(null);
+                setRejectingChurchId(null);
                 setRejectionReason("");
               }}
             >

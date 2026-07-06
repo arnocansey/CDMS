@@ -318,6 +318,32 @@ export function useChurchRequests() {
   })
 }
 
+export function useApproveChurchRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (requestId: number) => {
+      const response = await api.post(`/approvals/church-requests/${requestId}/approve`)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["church-requests"] })
+    },
+  })
+}
+
+export function useRejectChurchRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ requestId, reason }: { requestId: number; reason: string }) => {
+      const response = await api.post(`/approvals/church-requests/${requestId}/reject`, { reason })
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["church-requests"] })
+    },
+  })
+}
+
 export function useSearchChurches(query: string) {
   return useQuery({
     queryKey: ["church-search", query],
