@@ -6,6 +6,7 @@ import com.cdms.exception.BadRequestException;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.ChurchTransferRepository;
 import com.cdms.repository.MemberRepository;
+import com.cdms.security.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,10 @@ public class ChurchTransferService {
     public ChurchTransfer requestTransfer(Long memberId, Long toChurchId, String reason) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Member", memberId));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !member.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Member", memberId);
+        }
 
         ChurchTransfer transfer = new ChurchTransfer();
         transfer.setMember(member);
@@ -54,6 +59,10 @@ public class ChurchTransferService {
     public ChurchTransfer approveTransfer(Long transferId, String approvedBy) {
         ChurchTransfer transfer = churchTransferRepository.findById(transferId)
                 .orElseThrow(() -> new ResourceNotFoundException("ChurchTransfer", transferId));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !transfer.getToChurchId().equals(churchId) && !transfer.getFromChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("ChurchTransfer", transferId);
+        }
 
         if (!"PENDING".equals(transfer.getStatus())) {
             throw new BadRequestException("Transfer is not in PENDING status");
@@ -77,6 +86,10 @@ public class ChurchTransferService {
     public ChurchTransfer rejectTransfer(Long transferId, String reason) {
         ChurchTransfer transfer = churchTransferRepository.findById(transferId)
                 .orElseThrow(() -> new ResourceNotFoundException("ChurchTransfer", transferId));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !transfer.getToChurchId().equals(churchId) && !transfer.getFromChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("ChurchTransfer", transferId);
+        }
 
         if (!"PENDING".equals(transfer.getStatus())) {
             throw new BadRequestException("Transfer is not in PENDING status");

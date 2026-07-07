@@ -4,6 +4,7 @@ import com.cdms.entity.ApiKey;
 import com.cdms.exception.BadRequestException;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.ApiKeyRepository;
+import com.cdms.security.TenantContext;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -50,6 +51,10 @@ public class ApiKeyService {
     public void revokeApiKey(Long keyId) {
         ApiKey key = apiKeyRepository.findById(keyId)
                 .orElseThrow(() -> new ResourceNotFoundException("API Key", keyId));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !key.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("API Key", keyId);
+        }
         key.setActive(false);
         apiKeyRepository.save(key);
     }
@@ -70,6 +75,10 @@ public class ApiKeyService {
     public ApiKey regenerateKeys(Long keyId) {
         ApiKey key = apiKeyRepository.findById(keyId)
                 .orElseThrow(() -> new ResourceNotFoundException("API Key", keyId));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !key.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("API Key", keyId);
+        }
         key.setApiKey(UUID.randomUUID().toString());
         key.setSecretKey(UUID.randomUUID().toString());
         return apiKeyRepository.save(key);

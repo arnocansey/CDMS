@@ -13,6 +13,7 @@ import java.util.Optional;
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByEmail(String email);
+    Optional<Member> findByEmailAndChurchId(String email, Long churchId);
     boolean existsByEmail(String email);
     List<Member> findByChurchId(Long churchId);
     Page<Member> findByChurchId(Long churchId, Pageable pageable);

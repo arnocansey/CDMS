@@ -10,6 +10,7 @@ import com.cdms.repository.DonationRepository;
 import com.cdms.repository.ExpenseRepository;
 import com.cdms.repository.ImportJobRepository;
 import com.cdms.repository.MemberRepository;
+import com.cdms.security.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -169,9 +170,9 @@ public class CsvImportService {
                         continue;
                     }
 
-                    Optional<Member> memberOpt = memberRepository.findByEmail(memberEmail);
+                    Optional<Member> memberOpt = memberRepository.findByEmailAndChurchId(memberEmail, churchId);
                     if (memberOpt.isEmpty()) {
-                        errors.add("Row " + totalRows + ": Member not found with email '" + memberEmail + "'");
+                        errors.add("Row " + totalRows + ": Member not found with email '" + memberEmail + "' in this church");
                         errorRows++;
                         continue;
                     }
@@ -317,6 +318,10 @@ public class CsvImportService {
     public List<String> getImportErrors(Long importId) {
         ImportJob job = importJobRepository.findById(importId)
                 .orElseThrow(() -> new ResourceNotFoundException("ImportJob", importId));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !job.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("ImportJob", importId);
+        }
         if (job.getErrors() == null) {
             return Collections.emptyList();
         }
