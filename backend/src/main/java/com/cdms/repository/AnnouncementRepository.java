@@ -19,4 +19,6 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
 
     @Query("SELECT a FROM Announcement a WHERE a.churchId = :churchId AND a.published = true AND (a.expiryDate IS NULL OR a.expiryDate >= :date)")
     List<Announcement> findActiveAnnouncementsByChurchId(@Param("churchId") Long churchId, @Param("date") LocalDate date);
+
+    List<Announcement> findByChurchId(Long churchId);
 }

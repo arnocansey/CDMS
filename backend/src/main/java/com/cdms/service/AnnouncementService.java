@@ -22,13 +22,25 @@ public class AnnouncementService {
     }
 
     public List<AnnouncementDto> getAllAnnouncements() {
-        return announcementRepository.findAll().stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return announcementRepository.findAll().stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return announcementRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public List<AnnouncementDto> getActiveAnnouncements() {
-        return announcementRepository.findActiveAnnouncements(LocalDate.now()).stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return announcementRepository.findActiveAnnouncements(LocalDate.now()).stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return announcementRepository.findActiveAnnouncementsByChurchId(churchId, LocalDate.now()).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -36,6 +48,10 @@ public class AnnouncementService {
     public AnnouncementDto getAnnouncementById(Long id) {
         Announcement announcement = announcementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Announcement", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !announcement.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Announcement", id);
+        }
         return mapToDto(announcement);
     }
 

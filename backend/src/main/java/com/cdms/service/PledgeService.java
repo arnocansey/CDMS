@@ -45,7 +45,13 @@ public class PledgeService {
 
     @Transactional(readOnly = true)
     public List<PledgeDto> getAllPledges() {
-        return pledgeRepository.findAll().stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return pledgeRepository.findAll().stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return pledgeRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -54,26 +60,50 @@ public class PledgeService {
     public PledgeDto getPledgeById(Long id) {
         Pledge pledge = pledgeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pledge", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !pledge.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Pledge", id);
+        }
         return mapToDto(pledge);
     }
 
     @Transactional(readOnly = true)
     public List<PledgeDto> getPledgesByMember(Long memberId) {
-        return pledgeRepository.findByMemberId(memberId).stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return pledgeRepository.findByMemberId(memberId).stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return pledgeRepository.findByChurchId(churchId).stream()
+                .filter(p -> p.getMember() != null && p.getMember().getId().equals(memberId))
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<PledgeDto> getActivePledges() {
-        return pledgeRepository.findByStatus("ACTIVE").stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return pledgeRepository.findByStatus("ACTIVE").stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return pledgeRepository.findByChurchIdAndStatus(churchId, "ACTIVE").stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<PledgeDto> getOverduePledges() {
-        return pledgeRepository.findByStatus("ACTIVE").stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return pledgeRepository.findByStatus("ACTIVE").stream()
+                    .filter(p -> p.getDueDate() != null && p.getDueDate().isBefore(LocalDate.now()))
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return pledgeRepository.findByChurchIdAndStatus(churchId, "ACTIVE").stream()
                 .filter(p -> p.getDueDate() != null && p.getDueDate().isBefore(LocalDate.now()))
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -83,6 +113,10 @@ public class PledgeService {
     public PledgeDto createPledge(PledgeDto dto) {
         Member member = memberRepository.findById(dto.getMemberId())
                 .orElseThrow(() -> new ResourceNotFoundException("Member", dto.getMemberId()));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && member.getChurchId() != null && !member.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Member", dto.getMemberId());
+        }
 
         Pledge pledge = new Pledge();
         pledge.setChurchId(TenantContext.getChurchId());
@@ -105,6 +139,10 @@ public class PledgeService {
     public PledgeDto updatePledge(Long id, PledgeDto dto) {
         Pledge pledge = pledgeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pledge", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && pledge.getChurchId() != null && !pledge.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Pledge", id);
+        }
 
         String oldValue = String.format("{\"type\":\"%s\",\"amount\":%s,\"status\":\"%s\"}", pledge.getPledgeType(), pledge.getPledgeAmount(), pledge.getStatus());
 
@@ -125,15 +163,23 @@ public class PledgeService {
     public void deletePledge(Long id) {
         Pledge pledge = pledgeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pledge", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && pledge.getChurchId() != null && !pledge.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Pledge", id);
+        }
         auditLogService.log(getCurrentUserId(), "DELETE", "PLEDGE", id,
                 String.format("{\"type\":\"%s\",\"amount\":%s}", pledge.getPledgeType(), pledge.getPledgeAmount()), null);
-        pledgeRepository.deleteById(id);
+        pledgeRepository.delete(pledge);
     }
 
     @Transactional
     public PledgePaymentDto recordPayment(PledgePaymentDto dto) {
         Pledge pledge = pledgeRepository.findById(dto.getPledgeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pledge", dto.getPledgeId()));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && pledge.getChurchId() != null && !pledge.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Pledge", dto.getPledgeId());
+        }
 
         PledgePayment payment = new PledgePayment();
         payment.setPledge(pledge);
@@ -158,6 +204,12 @@ public class PledgeService {
 
     @Transactional(readOnly = true)
     public List<PledgePaymentDto> getPledgePayments(Long pledgeId) {
+        Pledge pledge = pledgeRepository.findById(pledgeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pledge", pledgeId));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && pledge.getChurchId() != null && !pledge.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Pledge", pledgeId);
+        }
         return pledgePaymentRepository.findByPledgeIdOrderByPaymentDateDesc(pledgeId).stream()
                 .map(this::mapPaymentToDto)
                 .collect(Collectors.toList());
@@ -165,17 +217,35 @@ public class PledgeService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getPledgeSummary() {
-        BigDecimal totalPledged = pledgeRepository.sumPledgeAmountByStatus("ACTIVE")
-                .add(pledgeRepository.sumPledgeAmountByStatus("COMPLETED"))
-                .add(pledgeRepository.sumPledgeAmountByStatus("OVERDUE"));
-        BigDecimal totalPaid = pledgeRepository.sumAmountPaidByStatus("ACTIVE")
-                .add(pledgeRepository.sumAmountPaidByStatus("COMPLETED"))
-                .add(pledgeRepository.sumAmountPaidByStatus("OVERDUE"));
-        BigDecimal totalOutstanding = totalPledged.subtract(totalPaid);
+        Long churchId = TenantContext.getChurchId();
+        BigDecimal totalPledged;
+        BigDecimal totalPaid;
+        long activeCount;
+        long completedCount;
+        long overdueCount;
 
-        long activeCount = pledgeRepository.findByStatus("ACTIVE").size();
-        long completedCount = pledgeRepository.findByStatus("COMPLETED").size();
-        long overdueCount = getOverduePledges().size();
+        if (churchId == null) {
+            totalPledged = pledgeRepository.sumPledgeAmountByStatus("ACTIVE")
+                    .add(pledgeRepository.sumPledgeAmountByStatus("COMPLETED"))
+                    .add(pledgeRepository.sumPledgeAmountByStatus("OVERDUE"));
+            totalPaid = pledgeRepository.sumAmountPaidByStatus("ACTIVE")
+                    .add(pledgeRepository.sumAmountPaidByStatus("COMPLETED"))
+                    .add(pledgeRepository.sumAmountPaidByStatus("OVERDUE"));
+            activeCount = pledgeRepository.findByStatus("ACTIVE").size();
+            completedCount = pledgeRepository.findByStatus("COMPLETED").size();
+            overdueCount = getOverduePledges().size();
+        } else {
+            totalPledged = pledgeRepository.sumPledgeAmountByChurchIdAndStatus(churchId, "ACTIVE")
+                    .add(pledgeRepository.sumPledgeAmountByChurchIdAndStatus(churchId, "COMPLETED"))
+                    .add(pledgeRepository.sumPledgeAmountByChurchIdAndStatus(churchId, "OVERDUE"));
+            totalPaid = pledgeRepository.sumAmountPaidByChurchIdAndStatus(churchId, "ACTIVE")
+                    .add(pledgeRepository.sumAmountPaidByChurchIdAndStatus(churchId, "COMPLETED"))
+                    .add(pledgeRepository.sumAmountPaidByChurchIdAndStatus(churchId, "OVERDUE"));
+            activeCount = pledgeRepository.findByChurchIdAndStatus(churchId, "ACTIVE").size();
+            completedCount = pledgeRepository.findByChurchIdAndStatus(churchId, "COMPLETED").size();
+            overdueCount = getOverduePledges().size();
+        }
+        BigDecimal totalOutstanding = totalPledged.subtract(totalPaid);
 
         Map<String, Object> summary = new HashMap<>();
         summary.put("totalPledged", totalPledged);

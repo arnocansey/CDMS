@@ -46,7 +46,13 @@ public class FinancialGoalService {
     }
 
     public List<FinancialGoalDto> getAllGoals() {
-        return financialGoalRepository.findAll().stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return financialGoalRepository.findAll().stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return financialGoalRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -54,11 +60,21 @@ public class FinancialGoalService {
     public FinancialGoalDto getGoalById(Long id) {
         FinancialGoal goal = financialGoalRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("FinancialGoal", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !goal.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("FinancialGoal", id);
+        }
         return mapToDto(goal);
     }
 
     public List<FinancialGoalDto> getActiveGoals() {
-        return financialGoalRepository.findByStatus("ACTIVE").stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return financialGoalRepository.findByStatus("ACTIVE").stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return financialGoalRepository.findByChurchIdAndStatus(churchId, "ACTIVE").stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -84,6 +100,10 @@ public class FinancialGoalService {
     public FinancialGoalDto updateGoal(Long id, FinancialGoalDto dto) {
         FinancialGoal goal = financialGoalRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("FinancialGoal", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !goal.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("FinancialGoal", id);
+        }
 
         String oldValue = String.format("{\"name\":\"%s\",\"target\":%s,\"raised\":%s}", goal.getName(), goal.getTargetAmount(), goal.getAmountRaised());
 
@@ -104,15 +124,23 @@ public class FinancialGoalService {
     public void deleteGoal(Long id) {
         FinancialGoal goal = financialGoalRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("FinancialGoal", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !goal.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("FinancialGoal", id);
+        }
         auditLogService.log(getCurrentUserId(), "DELETE", "FINANCIAL_GOAL", id,
                 String.format("{\"name\":\"%s\"}", goal.getName()), null);
-        financialGoalRepository.deleteById(id);
+        financialGoalRepository.delete(goal);
     }
 
     @Transactional
     public GoalContributionDto recordContribution(GoalContributionDto dto) {
         FinancialGoal goal = financialGoalRepository.findById(dto.getGoalId())
                 .orElseThrow(() -> new ResourceNotFoundException("FinancialGoal", dto.getGoalId()));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !goal.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("FinancialGoal", dto.getGoalId());
+        }
 
         GoalContribution contribution = new GoalContribution();
         contribution.setGoal(goal);
@@ -143,14 +171,23 @@ public class FinancialGoalService {
 
     @Transactional(readOnly = true)
     public List<GoalContributionDto> getGoalContributions(Long goalId) {
+        FinancialGoal goal = financialGoalRepository.findById(goalId)
+                .orElseThrow(() -> new ResourceNotFoundException("FinancialGoal", goalId));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !goal.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("FinancialGoal", goalId);
+        }
         return goalContributionRepository.findByGoalIdOrderByContributionDateDesc(goalId).stream()
                 .map(this::mapContributionToDto)
                 .collect(Collectors.toList());
     }
 
     public Map<String, Object> getGoalSummary() {
-        List<FinancialGoal> allGoals = financialGoalRepository.findAll();
-        List<FinancialGoal> activeGoals = financialGoalRepository.findByStatus("ACTIVE");
+        Long churchId = TenantContext.getChurchId();
+        List<FinancialGoal> allGoals = churchId == null ? financialGoalRepository.findAll() : financialGoalRepository.findByChurchId(churchId);
+        List<FinancialGoal> activeGoals = allGoals.stream()
+                .filter(g -> "ACTIVE".equals(g.getStatus()))
+                .collect(Collectors.toList());
 
         BigDecimal totalTarget = allGoals.stream()
                 .map(FinancialGoal::getTargetAmount)

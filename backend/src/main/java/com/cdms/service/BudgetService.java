@@ -33,13 +33,14 @@ public class BudgetService {
     }
 
     public List<BudgetDto> getAllBudgets() {
-        return budgetRepository.findAll().stream()
+        return budgetRepository.findByChurchId(TenantContext.getChurchId()).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public List<BudgetDto> getBudgetsByPeriod(String period) {
-        return budgetRepository.findByPeriod(period).stream()
+        return budgetRepository.findByChurchId(TenantContext.getChurchId()).stream()
+                .filter(b -> period.equals(b.getPeriod()))
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -67,6 +68,9 @@ public class BudgetService {
     public BudgetDto updateBudget(Long id, BudgetDto budgetDto) {
         Budget budget = budgetRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Budget", id));
+        if (!budget.getChurchId().equals(TenantContext.getChurchId())) {
+            throw new ResourceNotFoundException("Budget", id);
+        }
 
         String oldValue = String.format("{\"name\":\"%s\",\"amount\":%s}", budget.getName(), budget.getAmount());
 
@@ -89,14 +93,27 @@ public class BudgetService {
     public void deleteBudget(Long id) {
         Budget budget = budgetRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Budget", id));
+        if (!budget.getChurchId().equals(TenantContext.getChurchId())) {
+            throw new ResourceNotFoundException("Budget", id);
+        }
         auditLogService.log(getCurrentUserId(), "DELETE", "BUDGET", id,
                 String.format("{\"name\":\"%s\"}", budget.getName()), null);
-        budgetRepository.deleteById(id);
+        budgetRepository.delete(budget);
     }
 
     public Map<String, BigDecimal> getBudgetSummary(String period) {
-        BigDecimal totalBudgeted = budgetRepository.sumAmountByPeriod(period);
-        BigDecimal totalSpent = budgetRepository.sumSpentByPeriod(period);
+        List<Budget> budgets = budgetRepository.findByChurchId(TenantContext.getChurchId()).stream()
+                .filter(b -> period.equals(b.getPeriod()))
+                .collect(Collectors.toList());
+
+        BigDecimal totalBudgeted = budgets.stream()
+                .map(Budget::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalSpent = budgets.stream()
+                .map(b -> b.getSpent() != null ? b.getSpent() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         BigDecimal remaining = totalBudgeted.subtract(totalSpent);
 
         Map<String, BigDecimal> summary = new HashMap<>();

@@ -5,6 +5,8 @@ import com.cdms.entity.User;
 import com.cdms.entity.Role;
 import com.cdms.exception.BadRequestException;
 import com.cdms.exception.ResourceNotFoundException;
+import com.cdms.security.TenantContext;
+import com.cdms.repository.ChurchRepository;
 import com.cdms.repository.UserRepository;
 import com.cdms.repository.RoleRepository;
 import org.springframework.data.domain.Page;
@@ -24,22 +26,32 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ChurchRepository churchRepository;
 
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, ChurchRepository churchRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.churchRepository = churchRepository;
     }
 
     @Transactional(readOnly = true)
     public Page<UserDto> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable).map(this::mapToDto);
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return userRepository.findAll(pageable).map(this::mapToDto);
+        }
+        return userRepository.findByChurchId(churchId, pageable).map(this::mapToDto);
     }
 
     @Transactional(readOnly = true)
     public UserDto getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && (user.getChurch() == null || !user.getChurch().getId().equals(churchId))) {
+            throw new ResourceNotFoundException("User", id);
+        }
         return mapToDto(user);
     }
 
@@ -55,6 +67,10 @@ public class UserService {
         user.setFirstName(userDto.getFirstName());
         user.setLastName(userDto.getLastName());
         user.setEnabled(userDto.isEnabled());
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null) {
+            user.setChurch(churchRepository.findById(churchId).orElse(null));
+        }
 
         if (userDto.getRoles() != null && !userDto.getRoles().isEmpty()) {
             Set<Role> roles = new HashSet<>();
@@ -74,6 +90,10 @@ public class UserService {
     public UserDto updateUser(Long id, UserDto userDto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && (user.getChurch() == null || !user.getChurch().getId().equals(churchId))) {
+            throw new ResourceNotFoundException("User", id);
+        }
 
         user.setFirstName(userDto.getFirstName());
         user.setLastName(userDto.getLastName());
@@ -97,6 +117,10 @@ public class UserService {
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && (user.getChurch() == null || !user.getChurch().getId().equals(churchId))) {
+            throw new ResourceNotFoundException("User", id);
+        }
         userRepository.delete(user);
     }
 

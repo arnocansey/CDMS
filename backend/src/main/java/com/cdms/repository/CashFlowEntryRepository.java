@@ -18,4 +18,5 @@ public interface CashFlowEntryRepository extends JpaRepository<CashFlowEntry, Lo
     BigDecimal sumByEntryTypeAndEntryDateBetween(@Param("entryType") String entryType, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     List<CashFlowEntry> findByEntryDate(LocalDate entryDate);
+    List<CashFlowEntry> findByChurchId(Long churchId);
 }

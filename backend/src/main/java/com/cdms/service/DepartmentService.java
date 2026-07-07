@@ -26,7 +26,13 @@ public class DepartmentService {
     }
 
     public List<DepartmentDto> getAllDepartments() {
-        return departmentRepository.findAll().stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return departmentRepository.findAll().stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return departmentRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -34,13 +40,24 @@ public class DepartmentService {
     public DepartmentDto getDepartmentById(Long id) {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !department.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Department", id);
+        }
         return mapToDto(department);
     }
 
     @Transactional
     public DepartmentDto createDepartment(DepartmentDto departmentDto) {
-        if (departmentRepository.existsByName(departmentDto.getName())) {
-            throw new BadRequestException("Department name already exists");
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null) {
+            if (departmentRepository.existsByNameAndChurchId(departmentDto.getName(), churchId)) {
+                throw new BadRequestException("Department name already exists");
+            }
+        } else {
+            if (departmentRepository.existsByName(departmentDto.getName())) {
+                throw new BadRequestException("Department name already exists");
+            }
         }
 
         Department department = new Department();
@@ -62,6 +79,22 @@ public class DepartmentService {
     public DepartmentDto updateDepartment(Long id, DepartmentDto departmentDto) {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !department.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Department", id);
+        }
+
+        if (!department.getName().equals(departmentDto.getName())) {
+            if (churchId != null) {
+                if (departmentRepository.existsByNameAndChurchId(departmentDto.getName(), churchId)) {
+                    throw new BadRequestException("Department name already exists");
+                }
+            } else {
+                if (departmentRepository.existsByName(departmentDto.getName())) {
+                    throw new BadRequestException("Department name already exists");
+                }
+            }
+        }
 
         department.setName(departmentDto.getName());
         department.setDescription(departmentDto.getDescription());
@@ -80,6 +113,10 @@ public class DepartmentService {
     public void deleteDepartment(Long id) {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !department.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Department", id);
+        }
         departmentRepository.delete(department);
     }
 

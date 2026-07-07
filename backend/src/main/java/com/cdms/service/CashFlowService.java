@@ -7,6 +7,7 @@ import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.CashFlowEntryRepository;
 import com.cdms.repository.FundRepository;
 import org.springframework.stereotype.Service;
+import com.cdms.security.TenantContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -28,19 +29,21 @@ public class CashFlowService {
     }
 
     public List<CashFlowEntryDto> getAllEntries() {
-        return cashFlowEntryRepository.findAll().stream()
+        return cashFlowEntryRepository.findByChurchId(TenantContext.getChurchId()).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public List<CashFlowEntryDto> getEntriesByDateRange(LocalDate start, LocalDate end) {
-        return cashFlowEntryRepository.findByEntryDateBetween(start, end).stream()
+        return cashFlowEntryRepository.findByChurchId(TenantContext.getChurchId()).stream()
+                .filter(e -> !e.getEntryDate().isBefore(start) && !e.getEntryDate().isAfter(end))
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public CashFlowEntryDto createEntry(CashFlowEntryDto dto) {
         CashFlowEntry entry = new CashFlowEntry();
+        entry.setChurchId(TenantContext.getChurchId());
         entry.setEntryDate(dto.getEntryDate());
         entry.setEntryType(dto.getEntryType());
         entry.setCategory(dto.getCategory());
@@ -55,24 +58,58 @@ public class CashFlowService {
     }
 
     public void deleteEntry(Long id) {
-        cashFlowEntryRepository.findById(id)
+        CashFlowEntry entry = cashFlowEntryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("CashFlowEntry", id));
-        cashFlowEntryRepository.deleteById(id);
+        if (!entry.getChurchId().equals(TenantContext.getChurchId())) {
+            throw new ResourceNotFoundException("CashFlowEntry", id);
+        }
+        cashFlowEntryRepository.delete(entry);
     }
 
     public CashFlowStatementDto getCashFlowStatement(LocalDate start, LocalDate end) {
+        Long churchId = TenantContext.getChurchId();
+        List<CashFlowEntry> allChurchEntries = cashFlowEntryRepository.findByChurchId(churchId);
+
         LocalDate previousPeriodEnd = start.minusDays(1);
-        LocalDate previousPeriodStart = previousPeriodEnd.minusDays(end.toEpochDay() - start.toEpochDay());
+        BigDecimal totalPreviousIncome = allChurchEntries.stream()
+                .filter(e -> "INCOME".equals(e.getEntryType()) && !e.getEntryDate().isAfter(previousPeriodEnd))
+                .map(CashFlowEntry::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalPreviousExpense = allChurchEntries.stream()
+                .filter(e -> "EXPENSE".equals(e.getEntryType()) && !e.getEntryDate().isAfter(previousPeriodEnd))
+                .map(CashFlowEntry::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal openingBalance = totalPreviousIncome.subtract(totalPreviousExpense);
 
-        BigDecimal openingBalance = cashFlowEntryRepository.sumByEntryTypeAndEntryDateBetween("INCOME", previousPeriodStart, previousPeriodEnd)
-                .subtract(cashFlowEntryRepository.sumByEntryTypeAndEntryDateBetween("EXPENSE", previousPeriodStart, previousPeriodEnd));
+        List<CashFlowEntry> periodEntries = allChurchEntries.stream()
+                .filter(e -> !e.getEntryDate().isBefore(start) && !e.getEntryDate().isAfter(end))
+                .collect(Collectors.toList());
 
-        BigDecimal totalIncome = cashFlowEntryRepository.sumByEntryTypeAndEntryDateBetween("INCOME", start, end);
-        BigDecimal totalExpenses = cashFlowEntryRepository.sumByEntryTypeAndEntryDateBetween("EXPENSE", start, end);
+        BigDecimal totalIncome = periodEntries.stream()
+                .filter(e -> "INCOME".equals(e.getEntryType()))
+                .map(CashFlowEntry::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalExpenses = periodEntries.stream()
+                .filter(e -> "EXPENSE".equals(e.getEntryType()))
+                .map(CashFlowEntry::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         BigDecimal closingBalance = openingBalance.add(totalIncome).subtract(totalExpenses);
 
-        Map<String, BigDecimal> incomeBreakdown = getCategoryBreakdown("INCOME", start, end);
-        Map<String, BigDecimal> expenseBreakdown = getCategoryBreakdown("EXPENSE", start, end);
+        Map<String, BigDecimal> incomeBreakdown = periodEntries.stream()
+                .filter(e -> "INCOME".equals(e.getEntryType()))
+                .collect(Collectors.groupingBy(
+                        CashFlowEntry::getCategory,
+                        Collectors.reducing(BigDecimal.ZERO, CashFlowEntry::getAmount, BigDecimal::add)
+                ));
+
+        Map<String, BigDecimal> expenseBreakdown = periodEntries.stream()
+                .filter(e -> "EXPENSE".equals(e.getEntryType()))
+                .collect(Collectors.groupingBy(
+                        CashFlowEntry::getCategory,
+                        Collectors.reducing(BigDecimal.ZERO, CashFlowEntry::getAmount, BigDecimal::add)
+                ));
 
         CashFlowStatementDto statement = new CashFlowStatementDto();
         statement.setPeriod(start + " to " + end);
@@ -98,15 +135,6 @@ public class CashFlowService {
 
     public CashFlowStatementDto getAnnualCashFlow(int year) {
         return getCashFlowStatement(LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
-    }
-
-    private Map<String, BigDecimal> getCategoryBreakdown(String entryType, LocalDate start, LocalDate end) {
-        List<CashFlowEntry> entries = cashFlowEntryRepository.findByEntryTypeAndEntryDateBetween(entryType, start, end);
-        return entries.stream()
-                .collect(Collectors.groupingBy(
-                        CashFlowEntry::getCategory,
-                        Collectors.reducing(BigDecimal.ZERO, CashFlowEntry::getAmount, BigDecimal::add)
-                ));
     }
 
     private CashFlowEntryDto mapToDto(CashFlowEntry entry) {

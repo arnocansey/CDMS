@@ -39,7 +39,13 @@ public class FundService {
     }
 
     public List<FundDto> getAllFunds() {
-        return fundRepository.findAll().stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return fundRepository.findAll().stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return fundRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -47,11 +53,21 @@ public class FundService {
     public FundDto getFundById(Long id) {
         Fund fund = fundRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Fund", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !fund.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Fund", id);
+        }
         return mapToDto(fund);
     }
 
     public List<FundDto> getActiveFunds() {
-        return fundRepository.findByActiveTrue().stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return fundRepository.findByActiveTrue().stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return fundRepository.findByChurchIdAndActiveTrue(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -93,6 +109,10 @@ public class FundService {
     public FundDto updateFund(Long id, FundDto dto) {
         Fund fund = fundRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Fund", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !fund.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Fund", id);
+        }
 
         String oldValue = String.format("{\"name\":\"%s\",\"balance\":%s}", fund.getName(), fund.getCurrentBalance());
 
@@ -114,13 +134,18 @@ public class FundService {
     public void deleteFund(Long id) {
         Fund fund = fundRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Fund", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !fund.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Fund", id);
+        }
         auditLogService.log(getCurrentUserId(), "DELETE", "FUND", id,
                 String.format("{\"name\":\"%s\"}", fund.getName()), null);
-        fundRepository.deleteById(id);
+        fundRepository.delete(fund);
     }
 
     public Map<String, Object> getFundSummary() {
-        List<Fund> funds = fundRepository.findByActiveTrue();
+        Long churchId = TenantContext.getChurchId();
+        List<Fund> funds = churchId == null ? fundRepository.findByActiveTrue() : fundRepository.findByChurchIdAndActiveTrue(churchId);
         BigDecimal totalBalance = funds.stream()
                 .map(Fund::getCurrentBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -136,6 +161,10 @@ public class FundService {
     public FundTransactionDto recordFundTransaction(FundTransactionDto dto) {
         Fund fund = fundRepository.findById(dto.getFundId())
                 .orElseThrow(() -> new ResourceNotFoundException("Fund", dto.getFundId()));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !fund.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Fund", dto.getFundId());
+        }
 
         FundTransaction transaction = new FundTransaction();
         transaction.setFund(fund);
@@ -162,6 +191,12 @@ public class FundService {
 
     @Transactional(readOnly = true)
     public List<FundTransactionDto> getFundTransactions(Long fundId) {
+        Fund fund = fundRepository.findById(fundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Fund", fundId));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !fund.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Fund", fundId);
+        }
         return fundTransactionRepository.findByFundId(fundId).stream()
                 .map(this::mapTransactionToDto)
                 .collect(Collectors.toList());
@@ -169,6 +204,12 @@ public class FundService {
 
     @Transactional(readOnly = true)
     public List<FundTransactionDto> getFundTransactionsByDateRange(Long fundId, LocalDate start, LocalDate end) {
+        Fund fund = fundRepository.findById(fundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Fund", fundId));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !fund.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Fund", fundId);
+        }
         return fundTransactionRepository.findByFundIdAndTransactionDateBetween(fundId, start, end).stream()
                 .map(this::mapTransactionToDto)
                 .collect(Collectors.toList());

@@ -22,19 +22,38 @@ public class EventService {
     }
 
     public List<EventDto> getAllEvents() {
-        return eventRepository.findAll().stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return eventRepository.findAll().stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return eventRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public List<EventDto> getUpcomingEvents() {
-        return eventRepository.findUpcomingEvents(LocalDate.now()).stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return eventRepository.findUpcomingEvents(LocalDate.now()).stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return eventRepository.findUpcomingEventsByChurchId(churchId, LocalDate.now()).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public List<EventDto> getEventsByDateRange(LocalDate startDate, LocalDate endDate) {
-        return eventRepository.findByEventDateBetween(startDate, endDate).stream()
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return eventRepository.findByEventDateBetween(startDate, endDate).stream()
+                    .map(this::mapToDto)
+                    .collect(Collectors.toList());
+        }
+        return eventRepository.findByChurchId(churchId).stream()
+                .filter(e -> !e.getEventDate().isBefore(startDate) && !e.getEventDate().isAfter(endDate))
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -42,6 +61,10 @@ public class EventService {
     public EventDto getEventById(Long id) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !event.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Event", id);
+        }
         return mapToDto(event);
     }
 
@@ -66,6 +89,10 @@ public class EventService {
     public EventDto updateEvent(Long id, EventDto eventDto) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !event.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Event", id);
+        }
 
         event.setTitle(eventDto.getTitle());
         event.setDescription(eventDto.getDescription());
@@ -83,11 +110,19 @@ public class EventService {
     public void deleteEvent(Long id) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", id));
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null && !event.getChurchId().equals(churchId)) {
+            throw new ResourceNotFoundException("Event", id);
+        }
         eventRepository.delete(event);
     }
 
     public long getUpcomingEventsCount() {
-        return eventRepository.findUpcomingEvents(LocalDate.now()).size();
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            return eventRepository.findUpcomingEvents(LocalDate.now()).size();
+        }
+        return eventRepository.findUpcomingEventsByChurchId(churchId, LocalDate.now()).size();
     }
 
     private EventDto mapToDto(Event event) {

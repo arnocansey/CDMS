@@ -120,11 +120,11 @@ class FundServiceTest {
     @Test
     void deleteFund_Success() {
         when(fundRepository.findById(1L)).thenReturn(Optional.of(fund));
-        doNothing().when(fundRepository).deleteById(1L);
+        doNothing().when(fundRepository).delete(fund);
 
         fundService.deleteFund(1L);
 
-        verify(fundRepository, times(1)).deleteById(1L);
+        verify(fundRepository, times(1)).delete(fund);
     }
 
     @Test

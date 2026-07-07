@@ -121,8 +121,15 @@ public class MemberService {
 
     @Transactional
     public MemberDto createMember(MemberDto memberDto) {
-        if (memberRepository.existsByEmail(memberDto.getEmail())) {
-            throw new BadRequestException("Email already exists");
+        Long churchId = TenantContext.getChurchId();
+        if (churchId != null) {
+            if (memberRepository.existsByEmailAndChurchId(memberDto.getEmail(), churchId)) {
+                throw new BadRequestException("Email already exists");
+            }
+        } else {
+            if (memberRepository.existsByEmail(memberDto.getEmail())) {
+                throw new BadRequestException("Email already exists");
+            }
         }
 
         Member member = new Member();

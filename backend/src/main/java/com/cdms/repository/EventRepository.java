@@ -20,4 +20,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("SELECT e FROM Event e WHERE e.churchId = :churchId AND e.eventDate >= :date ORDER BY e.eventDate ASC")
     List<Event> findUpcomingEventsByChurchId(@Param("churchId") Long churchId, @Param("date") LocalDate date);
+
+    List<Event> findByChurchId(Long churchId);
 }
