@@ -42,18 +42,20 @@ public class TwoFactorAuthController {
         Map<String, String> response = new HashMap<>();
         response.put("secret", secret);
         response.put("qrCodeUri", qrCodeUri);
+        response.put("qrCode", qrCodeUri); // FE alias
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/enable")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
-    public ResponseEntity<Map<String, String>> enable(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> enable(@RequestBody Map<String, String> body) {
         Long userId = getCurrentUserId();
         String code = body.get("code");
-        twoFactorAuthService.enable(userId, code);
+        List<String> backupCodes = twoFactorAuthService.enableAndReturnBackupCodes(userId, code);
 
-        Map<String, String> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("message", "2FA enabled successfully");
+        response.put("backupCodes", backupCodes);
         return ResponseEntity.ok(response);
     }
 
@@ -102,6 +104,11 @@ public class TwoFactorAuthController {
         Map<String, Object> response = new HashMap<>();
         response.put("enabled", isSetup && tfa != null && tfa.isEnabled());
         response.put("setup", isSetup);
+        int backupCount = 0;
+        if (tfa != null && tfa.getBackupCodes() != null && !tfa.getBackupCodes().isBlank()) {
+            backupCount = tfa.getBackupCodes().split(",").length;
+        }
+        response.put("backupCodesCount", backupCount);
         return ResponseEntity.ok(response);
     }
 

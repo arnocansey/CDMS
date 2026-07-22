@@ -53,8 +53,16 @@ public class WhiteLabelController {
     @PostMapping("/logo-dark")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> uploadDarkLogo(@RequestParam("file") MultipartFile file) throws IOException {
-        Long churchId = TenantContext.getChurchId();
+        Long churchId = TenantContext.requireChurchId();
         String url = whiteLabelService.uploadDarkLogo(churchId, file);
+        return ResponseEntity.ok(Map.of("url", url));
+    }
+
+    @PostMapping("/logo")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> uploadLogo(@RequestParam("file") MultipartFile file) throws IOException {
+        Long churchId = TenantContext.requireChurchId();
+        String url = whiteLabelService.uploadLogo(churchId, file);
         return ResponseEntity.ok(Map.of("url", url));
     }
 }

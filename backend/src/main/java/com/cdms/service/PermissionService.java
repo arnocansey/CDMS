@@ -112,6 +112,52 @@ public class PermissionService {
         return permissionRepository.findByChurchIdAndRole(churchId, role);
     }
 
+    /**
+     * Returns saved permissions for a role, seeding from defaults when the church has none yet
+     * so the UI always has a full editable grid.
+     */
+    @Transactional
+    public List<Permission> getPermissionsForRoleOrDefaults(Long churchId, String role) {
+        List<Permission> existing = permissionRepository.findByChurchIdAndRole(churchId, role);
+        if (!existing.isEmpty()) {
+            return existing;
+        }
+
+        Map<String, Map<String, Boolean>> roleDefaults = DEFAULT_PERMISSIONS.get(role);
+        if (roleDefaults == null) {
+            return List.of();
+        }
+
+        List<Permission> seeded = new ArrayList<>();
+        for (Map.Entry<String, Map<String, Boolean>> resourceEntry : roleDefaults.entrySet()) {
+            String resource = resourceEntry.getKey();
+            for (Map.Entry<String, Boolean> actionEntry : resourceEntry.getValue().entrySet()) {
+                seeded.add(new Permission(
+                        churchId, role, resource, actionEntry.getKey(), actionEntry.getValue()));
+            }
+        }
+        return permissionRepository.saveAll(seeded);
+    }
+
+    @Transactional
+    public List<Permission> updateRolePermissions(Long churchId, String role, Map<String, Object> permissionsByResource) {
+        List<Permission> saved = new ArrayList<>();
+        for (Map.Entry<String, Object> resourceEntry : permissionsByResource.entrySet()) {
+            String resource = resourceEntry.getKey();
+            Object actionsObj = resourceEntry.getValue();
+            if (!(actionsObj instanceof Map<?, ?> actionsMap)) {
+                continue;
+            }
+            for (Map.Entry<?, ?> actionEntry : actionsMap.entrySet()) {
+                String action = String.valueOf(actionEntry.getKey());
+                boolean allowed = Boolean.TRUE.equals(actionEntry.getValue())
+                        || "true".equalsIgnoreCase(String.valueOf(actionEntry.getValue()));
+                saved.add(updatePermission(churchId, role, resource, action, allowed));
+            }
+        }
+        return saved;
+    }
+
     @Transactional
     public Permission updatePermission(Long churchId, String role, String resource, String action, boolean allowed) {
         Permission permission = permissionRepository

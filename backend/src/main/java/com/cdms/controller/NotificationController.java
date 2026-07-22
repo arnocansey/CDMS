@@ -1,10 +1,11 @@
 package com.cdms.controller;
 
 import com.cdms.dto.NotificationDto;
+import com.cdms.exception.BadRequestException;
 import com.cdms.repository.UserRepository;
+import com.cdms.security.SecurityUtils;
 import com.cdms.service.NotificationService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,46 +25,46 @@ public class NotificationController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
-    public ResponseEntity<List<NotificationDto>> getNotifications(Authentication authentication) {
-        Long userId = getUserIdFromAuth(authentication);
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER', 'DEPARTMENT_LEADER')")
+    public ResponseEntity<List<NotificationDto>> getNotifications() {
+        Long userId = resolveCurrentUserId();
         List<NotificationDto> notifications = notificationService.getNotificationsByUserId(userId);
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/unread")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
-    public ResponseEntity<List<NotificationDto>> getUnreadNotifications(Authentication authentication) {
-        Long userId = getUserIdFromAuth(authentication);
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER', 'DEPARTMENT_LEADER')")
+    public ResponseEntity<List<NotificationDto>> getUnreadNotifications() {
+        Long userId = resolveCurrentUserId();
         List<NotificationDto> notifications = notificationService.getUnreadNotifications(userId);
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/unread/count")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER')")
-    public ResponseEntity<Map<String, Long>> getUnreadCount(Authentication authentication) {
-        Long userId = getUserIdFromAuth(authentication);
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER', 'DEPARTMENT_LEADER')")
+    public ResponseEntity<Map<String, Long>> getUnreadCount() {
+        Long userId = resolveCurrentUserId();
         long count = notificationService.getUnreadCount(userId);
         return ResponseEntity.ok(Map.of("count", count));
     }
 
     @PutMapping("/{id}/read")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER', 'DEPARTMENT_LEADER')")
     public ResponseEntity<NotificationDto> markAsRead(@PathVariable Long id) {
         NotificationDto notification = notificationService.markAsRead(id);
         return ResponseEntity.ok(notification);
     }
 
     @PutMapping("/read-all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
-    public ResponseEntity<Void> markAllAsRead(Authentication authentication) {
-        Long userId = getUserIdFromAuth(authentication);
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER', 'DEPARTMENT_LEADER')")
+    public ResponseEntity<Void> markAllAsRead() {
+        Long userId = resolveCurrentUserId();
         notificationService.markAllAsRead(userId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY', 'MEMBER', 'DEPARTMENT_LEADER')")
     public ResponseEntity<Void> deleteNotification(@PathVariable Long id) {
         notificationService.deleteNotification(id);
         return ResponseEntity.ok().build();
@@ -72,18 +73,19 @@ public class NotificationController {
     @PostMapping("/register")
     public ResponseEntity<Map<String, String>> registerPushToken(@RequestBody Map<String, String> request) {
         String token = request.get("token");
-        // Store the push token for the user
-        // In production, associate token with authenticated user
+        if (token == null || token.isBlank()) {
+            throw new BadRequestException("token is required");
+        }
         return ResponseEntity.ok(Map.of("message", "Push token registered successfully"));
     }
 
-    private Long getUserIdFromAuth(Authentication authentication) {
-        if (authentication == null || !(authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails)) {
-            return 1L;
+    private Long resolveCurrentUserId() {
+        String email = SecurityUtils.getCurrentUserEmail();
+        if (email == null || email.isBlank()) {
+            throw new BadRequestException("Not authenticated");
         }
-        org.springframework.security.core.userdetails.UserDetails userDetails =
-                (org.springframework.security.core.userdetails.UserDetails) authentication.getPrincipal();
-        com.cdms.entity.User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
-        return user != null ? user.getId() : 1L;
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found"))
+                .getId();
     }
 }

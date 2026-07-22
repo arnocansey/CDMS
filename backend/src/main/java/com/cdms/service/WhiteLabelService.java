@@ -38,6 +38,7 @@ public class WhiteLabelService {
         branding.put("customCss", church.getCustomCss());
         branding.put("logoUrl", church.getLogoUrl());
         branding.put("logoDarkUrl", church.getLogoDarkUrl());
+        branding.put("darkLogoUrl", church.getLogoDarkUrl()); // FE alias
         branding.put("faviconUrl", church.getFaviconUrl());
         branding.put("customDomain", church.getCustomDomain());
         return branding;
@@ -59,8 +60,9 @@ public class WhiteLabelService {
         if (updates.containsKey("logoUrl")) {
             church.setLogoUrl((String) updates.get("logoUrl"));
         }
-        if (updates.containsKey("logoDarkUrl")) {
-            church.setLogoDarkUrl((String) updates.get("logoDarkUrl"));
+        if (updates.containsKey("logoDarkUrl") || updates.containsKey("darkLogoUrl")) {
+            Object dark = updates.containsKey("logoDarkUrl") ? updates.get("logoDarkUrl") : updates.get("darkLogoUrl");
+            church.setLogoDarkUrl((String) dark);
         }
         if (updates.containsKey("faviconUrl")) {
             church.setFaviconUrl((String) updates.get("faviconUrl"));
@@ -128,6 +130,36 @@ public class WhiteLabelService {
 
         String fileUrl = "/api/files/download/church-logos/" + churchId + "/dark/" + filename;
         church.setLogoDarkUrl(fileUrl);
+        churchRepository.save(church);
+
+        return fileUrl;
+    }
+
+    public String uploadLogo(Long churchId, MultipartFile file) throws IOException {
+        Church church = churchRepository.findById(churchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Church", churchId));
+
+        if (file.isEmpty()) {
+            throw new BadRequestException("File is empty");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        String filename = "logo" + extension;
+
+        Path uploadPath = Paths.get(uploadDir, "church-logos", String.valueOf(churchId), "light");
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        Path filePath = uploadPath.resolve(filename);
+        file.transferTo(filePath.toFile());
+
+        String fileUrl = "/api/files/download/church-logos/" + churchId + "/light/" + filename;
+        church.setLogoUrl(fileUrl);
         churchRepository.save(church);
 
         return fileUrl;

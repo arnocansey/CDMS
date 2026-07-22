@@ -13,6 +13,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Church, ArrowLeft, Mail, Send, CheckCircle2 } from "lucide-react";
 import api from "@/lib/api";
+import { AuthBrandPanel } from "@/components/layout/auth-brand-panel";
+import { siteImages } from "@/lib/site-images";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -50,32 +52,24 @@ export default function ForgotPasswordPage() {
         <ThemeToggle />
       </div>
 
-      {/* Left Panel - Branding */}
-      <div className="relative hidden w-1/2 items-center justify-center bg-gradient-to-br from-primary/90 via-primary to-primary/70 lg:flex">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10" />
-          <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-white/5" />
-          <div className="absolute right-20 top-1/3 h-48 w-48 rounded-full bg-white/5" />
+      <AuthBrandPanel imageSrc={siteImages.hero} imageAlt="Church sanctuary">
+        <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+          <Church className="h-10 w-10 text-white" />
         </div>
-        <div className="relative z-10 max-w-md px-8 text-center text-white">
-          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-            <Church className="h-10 w-10 text-white" />
+        <h1 className="mb-4 text-4xl font-bold tracking-tight">
+          Reset Your Password
+        </h1>
+        <p className="mb-8 text-lg text-white/80">
+          No worries! Enter your email address and we&apos;ll send you a link to
+          reset your password.
+        </p>
+        <div className="flex items-center justify-center gap-3 text-sm text-white/70">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
+            <Mail className="h-4 w-4" />
           </div>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight">
-            Reset Your Password
-          </h1>
-          <p className="mb-8 text-lg text-white/80">
-            No worries! Enter your email address and we&apos;ll send you a link to
-            reset your password.
-          </p>
-          <div className="flex items-center justify-center gap-3 text-sm text-white/70">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-              <Mail className="h-4 w-4" />
-            </div>
-            Secure password reset process
-          </div>
+          Secure password reset process
         </div>
-      </div>
+      </AuthBrandPanel>
 
       {/* Right Panel - Form */}
       <div className="flex w-full items-center justify-center px-4 py-12 lg:w-1/2">

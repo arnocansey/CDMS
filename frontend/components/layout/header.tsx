@@ -42,7 +42,8 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const fetchUnreadCount = async () => {
     try {
       const response = await api.get("/notifications/unread/count");
-      setUnreadCount(response.data);
+      const data = response.data;
+      setUnreadCount(typeof data === "number" ? data : Number(data?.count ?? 0));
     } catch (error) {
       console.error("Failed to fetch unread notification count:", error);
     }

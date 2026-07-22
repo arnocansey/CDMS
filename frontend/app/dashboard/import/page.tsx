@@ -57,13 +57,23 @@ export default function ImportPage() {
     if (isAuthenticated) fetchHistory();
   }, [isAuthenticated]);
 
-  const downloadTemplate = (type: string) => {
-    const link = document.createElement("a");
-    link.href = `/templates/${type}-template.csv`;
-    link.download = `${type}-template.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const downloadTemplate = async (type: string) => {
+    const path = `/templates/${type}-template.csv`;
+    try {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error("Template not found");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${type}-template.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Template file is missing. Please try again later.");
+    }
   };
 
   const handleUpload = async (type: string, file: File) => {

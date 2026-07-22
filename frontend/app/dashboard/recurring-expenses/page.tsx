@@ -147,17 +147,19 @@ export default function RecurringExpensesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {expenses.map((e: any) => (
+                  {expenses.map((e: any) => {
+                    const isActive = e.active === true || e.status === "ACTIVE";
+                    return (
                     <tr key={e.id} className="border-b hover:bg-muted/50">
                       <td className="p-4 font-medium">{e.category}</td>
                       <td className="p-4 text-red-600">${e.amount?.toLocaleString()}</td>
                       <td className="p-4">{e.frequency}</td>
                       <td className="p-4">{e.nextDueDate || "—"}</td>
                       <td className="p-4">
-                        <StatusBadge status={e.status || "active"} />
+                        <StatusBadge status={isActive ? "ACTIVE" : "CANCELLED"} />
                       </td>
                       <td className="p-4">
-                        {e.status === "ACTIVE" && (
+                        {isActive && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -168,7 +170,8 @@ export default function RecurringExpensesPage() {
                         )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                   {expenses.length === 0 && (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-muted-foreground">

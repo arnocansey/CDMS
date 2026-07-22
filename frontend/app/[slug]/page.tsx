@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { siteImages } from "@/lib/site-images";
 import {
   Church,
   MapPin,
@@ -139,34 +141,47 @@ export default function ChurchPublicPage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 py-20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+        <section className="relative overflow-hidden py-20 sm:py-24">
+          <Image
+            src={siteImages.interior}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+            aria-hidden
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-slate-950/65 to-slate-950/80"
+            aria-hidden
+          />
           {primary && (
             <div
-              className="absolute inset-x-0 top-0 h-1.5"
+              className="absolute inset-x-0 top-0 z-10 h-1.5"
               style={{ backgroundColor: primary }}
               aria-hidden
             />
           )}
-          <div className="mx-auto max-w-5xl px-4 sm:px-6">
-            <div className="flex flex-col items-center text-center">
+          <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
+            <div className="flex flex-col items-center text-center text-white">
               {church.logoUrl ? (
                 <img
                   src={church.logoUrl}
                   alt={church.name}
-                  className="mb-6 h-20 w-20 rounded-2xl object-contain shadow-md"
+                  className="mb-6 h-20 w-20 rounded-2xl object-contain shadow-md ring-2 ring-white/20"
                 />
               ) : (
                 <div
-                  className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 shadow-md"
-                  style={primary ? { backgroundColor: `${primary}1a` } : undefined}
+                  className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/15 shadow-md backdrop-blur-sm"
+                  style={primary ? { backgroundColor: `${primary}33` } : undefined}
                 >
-                  <Church className="h-10 w-10 text-primary" style={accentStyle} />
+                  <Church className="h-10 w-10 text-white" />
                 </div>
               )}
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
                 {church.name}
               </h1>
-              <p className="mt-4 max-w-xl text-lg text-muted-foreground">
+              <p className="mt-4 max-w-xl text-lg text-white/80">
                 Welcome to our church community. Join us in worship, fellowship, and service.
               </p>
 
@@ -182,7 +197,7 @@ export default function ChurchPublicPage() {
                     asChild
                     variant="outline"
                     size="lg"
-                    className="px-8"
+                    className="border-white/40 bg-white/10 px-8 text-white hover:bg-white/20 hover:text-white"
                     style={secondaryBtnStyle}
                   >
                     <a href={church.website} target="_blank" rel="noopener noreferrer">

@@ -47,7 +47,7 @@ export default function BankReconciliationPage() {
       const data = res.data?.content ?? res.data ?? [];
       setHistory(data);
 
-      const active = data.find((r: any) => r.status === "IN_PROGRESS");
+      const active = data.find((r: any) => r.status === "PENDING" || r.status === "IN_PROGRESS");
       if (active) {
         setCurrentReconciliation(active);
         await fetchReconciliation(active.id);

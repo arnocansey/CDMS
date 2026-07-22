@@ -14,6 +14,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { Eye, EyeOff, Church, ArrowRight, Mail, Lock, CheckCircle } from "lucide-react";
+import { AuthBrandPanel } from "@/components/layout/auth-brand-panel";
+import { siteImages } from "@/lib/site-images";
 
 const productBullets = [
   "Member management",
@@ -54,34 +56,26 @@ export default function LoginPage() {
         <ThemeToggle />
       </div>
 
-      {/* Left Panel - Branding */}
-      <div className="relative hidden w-1/2 items-center justify-center bg-gradient-to-br from-primary/90 via-primary to-primary/70 lg:flex">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10" />
-          <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-white/5" />
-          <div className="absolute right-20 top-1/3 h-48 w-48 rounded-full bg-white/5" />
+      <AuthBrandPanel imageSrc={siteImages.stainedGlass} imageAlt="Congregation in worship">
+        <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+          <Church className="h-10 w-10 text-white" />
         </div>
-        <div className="relative z-10 max-w-md px-8 text-center text-white">
-          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-            <Church className="h-10 w-10 text-white" />
-          </div>
-          <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
-            {branding.systemName}
-          </h1>
-          <p className="mb-8 text-lg text-white/80">
-            Manage your church&apos;s finances with confidence. Track donations, budgets,
-            pledges, and generate reports — all in one place.
-          </p>
-          <ul className="mx-auto max-w-xs space-y-3 text-left text-sm text-white/90">
-            {productBullets.map((bullet) => (
-              <li key={bullet} className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 shrink-0 text-white" />
-                <span>{bullet}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+        <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
+          {branding.systemName}
+        </h1>
+        <p className="mb-8 text-lg text-white/80">
+          Manage your church&apos;s finances with confidence. Track donations, budgets,
+          pledges, and generate reports — all in one place.
+        </p>
+        <ul className="mx-auto max-w-xs space-y-3 text-left text-sm text-white/90">
+          {productBullets.map((bullet) => (
+            <li key={bullet} className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 shrink-0 text-white" />
+              <span>{bullet}</span>
+            </li>
+          ))}
+        </ul>
+      </AuthBrandPanel>
 
       {/* Right Panel - Form */}
       <div className="flex w-full items-center justify-center px-4 py-12 lg:w-1/2">

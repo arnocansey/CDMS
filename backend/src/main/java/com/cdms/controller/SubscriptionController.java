@@ -3,14 +3,15 @@ package com.cdms.controller;
 import com.cdms.entity.PaymentTransaction;
 import com.cdms.entity.SubscriptionPlan;
 import com.cdms.entity.User;
+import com.cdms.exception.BadRequestException;
 import com.cdms.repository.SubscriptionPlanRepository;
+import com.cdms.repository.UserRepository;
+import com.cdms.security.SecurityUtils;
 import com.cdms.security.TenantContext;
 import com.cdms.service.PaystackService;
-import com.cdms.service.TenantService;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,15 +22,15 @@ import java.util.Map;
 public class SubscriptionController {
 
     private final PaystackService paystackService;
-    private final TenantService tenantService;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
+    private final UserRepository userRepository;
 
     public SubscriptionController(PaystackService paystackService,
-                                  TenantService tenantService,
-                                  SubscriptionPlanRepository subscriptionPlanRepository) {
+                                  SubscriptionPlanRepository subscriptionPlanRepository,
+                                  UserRepository userRepository) {
         this.paystackService = paystackService;
-        this.tenantService = tenantService;
         this.subscriptionPlanRepository = subscriptionPlanRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("/plans")
@@ -46,14 +47,13 @@ public class SubscriptionController {
 
     @PostMapping("/initialize")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> initializePayment(
-            @RequestBody Map<String, Object> request,
-            @AuthenticationPrincipal User currentUser) {
-        Long churchId = TenantContext.getChurchId();
+    public ResponseEntity<Map<String, Object>> initializePayment(@RequestBody Map<String, Object> request) {
+        Long churchId = TenantContext.requireChurchId();
+        Long userId = resolveCurrentUserId();
         Long planId = Long.valueOf(request.get("planId").toString());
         String billingCycle = request.getOrDefault("billingCycle", "MONTHLY").toString();
 
-        Map<String, Object> result = paystackService.initializeTransaction(churchId, currentUser.getId(), planId, billingCycle);
+        Map<String, Object> result = paystackService.initializeTransaction(churchId, userId, planId, billingCycle);
         return ResponseEntity.ok(result);
     }
 
@@ -67,7 +67,7 @@ public class SubscriptionController {
     @GetMapping("/history")
     @PreAuthorize("hasAnyRole('ADMIN', 'TREASURER')")
     public ResponseEntity<List<PaymentTransaction>> getPaymentHistory() {
-        Long churchId = TenantContext.getChurchId();
+        Long churchId = TenantContext.requireChurchId();
         return ResponseEntity.ok(paystackService.getPaymentHistory(churchId));
     }
 
@@ -84,5 +84,15 @@ public class SubscriptionController {
         paystackService.handleWebhookEvent(eventType, payload);
 
         return ResponseEntity.ok("OK");
+    }
+
+    private Long resolveCurrentUserId() {
+        String email = SecurityUtils.getCurrentUserEmail();
+        if (email == null || email.isBlank()) {
+            throw new BadRequestException("Not authenticated");
+        }
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new BadRequestException("User not found"));
     }
 }

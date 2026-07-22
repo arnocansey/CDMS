@@ -1,9 +1,10 @@
 package com.cdms.controller;
 
-import com.cdms.security.TenantContext;
+import com.cdms.exception.BadRequestException;
+import com.cdms.repository.UserRepository;
+import com.cdms.security.SecurityUtils;
 import com.cdms.service.PushNotificationService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,16 +15,18 @@ import java.util.Map;
 public class PushNotificationController {
 
     private final PushNotificationService pushNotificationService;
+    private final UserRepository userRepository;
 
-    public PushNotificationController(PushNotificationService pushNotificationService) {
+    public PushNotificationController(PushNotificationService pushNotificationService,
+                                      UserRepository userRepository) {
         this.pushNotificationService = pushNotificationService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/subscribe")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
-    public ResponseEntity<Map<String, String>> subscribe(@RequestBody Map<String, String> request,
-                                                         Authentication authentication) {
-        Long userId = getUserIdFromAuth(authentication);
+    public ResponseEntity<Map<String, String>> subscribe(@RequestBody Map<String, String> request) {
+        Long userId = resolveCurrentUserId();
         String endpoint = request.get("endpoint");
         String p256dh = request.get("p256dh");
         String auth = request.get("auth");
@@ -58,25 +61,20 @@ public class PushNotificationController {
 
     @PostMapping("/test")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER', 'SECRETARY')")
-    public ResponseEntity<Map<String, String>> sendTestNotification(Authentication authentication) {
-        Long userId = getUserIdFromAuth(authentication);
+    public ResponseEntity<Map<String, String>> sendTestNotification() {
+        Long userId = resolveCurrentUserId();
         pushNotificationService.sendNotification(userId, "Test Notification",
-                "This is a test push notification from " + appName(), "/dashboard");
+                "This is a test push notification from CDMS", "/dashboard");
         return ResponseEntity.ok(Map.of("message", "Test notification sent"));
     }
 
-    private Long getUserIdFromAuth(Authentication authentication) {
-        if (authentication == null) {
-            return 1L;
+    private Long resolveCurrentUserId() {
+        String email = SecurityUtils.getCurrentUserEmail();
+        if (email == null || email.isBlank()) {
+            throw new BadRequestException("Not authenticated");
         }
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof Long) {
-            return (Long) principal;
-        }
-        return 1L;
-    }
-
-    private String appName() {
-        return "Church Financial Management System";
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found"))
+                .getId();
     }
 }

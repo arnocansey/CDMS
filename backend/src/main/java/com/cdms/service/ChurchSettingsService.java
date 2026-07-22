@@ -48,6 +48,13 @@ public class ChurchSettingsService {
             String field = entry.getKey();
             Object value = entry.getValue();
 
+            // Frontend aliases
+            if ("zip".equals(field)) {
+                field = "zipCode";
+            } else if ("fiscalYearStartMonth".equals(field)) {
+                field = "fiscalYearStart";
+            }
+
             if (!ALLOWED_FIELDS.contains(field)) {
                 continue;
             }

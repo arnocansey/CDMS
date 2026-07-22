@@ -66,7 +66,11 @@ export default function TwoFactorPage() {
     setSubmitting(true);
     try {
       const res = await api.post("/2fa/setup");
-      setQrCode(res.data.qrCode);
+      const uri = res.data.qrCodeUri || res.data.qrCode || "";
+      const imgSrc = uri.startsWith("otpauth://")
+        ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`
+        : uri;
+      setQrCode(imgSrc);
       setSecret(res.data.secret);
       setSetupStep("qr");
     } catch (error: any) {

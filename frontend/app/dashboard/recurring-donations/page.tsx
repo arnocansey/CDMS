@@ -155,16 +155,20 @@ export default function RecurringDonationsPage() {
                 <tbody>
                   {donations.map((d: any) => (
                     <tr key={d.id} className="border-b hover:bg-muted/50">
-                      <td className="p-4 font-medium">{d.memberName || "—"}</td>
+                      <td className="p-4 font-medium">
+                        {d.memberName
+                          || (d.member ? `${d.member.firstName || ""} ${d.member.lastName || ""}`.trim() : null)
+                          || "—"}
+                      </td>
                       <td className="p-4">${d.amount?.toLocaleString()}</td>
                       <td className="p-4">{d.category}</td>
                       <td className="p-4">{d.frequency}</td>
                       <td className="p-4">{d.nextDueDate || "—"}</td>
                       <td className="p-4">
-                        <StatusBadge status={d.status || "active"} />
+                        <StatusBadge status={d.active === true || d.status === "ACTIVE" ? "ACTIVE" : (d.status || "CANCELLED")} />
                       </td>
                       <td className="p-4">
-                        {d.status === "ACTIVE" && (
+                        {(d.active === true || d.status === "ACTIVE") && (
                           <Button
                             variant="ghost"
                             size="icon"

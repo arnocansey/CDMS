@@ -1,23 +1,28 @@
 package com.cdms.service;
 
 import com.cdms.entity.Donation;
+import com.cdms.entity.Member;
 import com.cdms.entity.RecurringDonation;
 import com.cdms.entity.Tithe;
+import com.cdms.entity.User;
+import com.cdms.exception.BadRequestException;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.DonationRepository;
+import com.cdms.repository.MemberRepository;
 import com.cdms.repository.RecurringDonationRepository;
 import com.cdms.repository.TitheRepository;
 import com.cdms.repository.UserRepository;
-import com.cdms.entity.User;
+import com.cdms.security.TenantContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.cdms.security.TenantContext;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class RecurringDonationService {
@@ -26,24 +31,73 @@ public class RecurringDonationService {
     private final DonationRepository donationRepository;
     private final TitheRepository titheRepository;
     private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
     private final AuditLogService auditLogService;
 
     public RecurringDonationService(RecurringDonationRepository recurringDonationRepository,
                                      DonationRepository donationRepository,
                                      TitheRepository titheRepository,
                                      UserRepository userRepository,
+                                     MemberRepository memberRepository,
                                      AuditLogService auditLogService) {
         this.recurringDonationRepository = recurringDonationRepository;
         this.donationRepository = donationRepository;
         this.titheRepository = titheRepository;
         this.userRepository = userRepository;
+        this.memberRepository = memberRepository;
         this.auditLogService = auditLogService;
+    }
+
+    @Transactional
+    public RecurringDonation createFromRequest(Map<String, Object> body) {
+        RecurringDonation recurringDonation = new RecurringDonation();
+        Long churchId = TenantContext.requireChurchId();
+        recurringDonation.setChurchId(churchId);
+
+        if (body.get("memberId") == null) {
+            throw new BadRequestException("memberId is required");
+        }
+        Long memberId = Long.valueOf(body.get("memberId").toString());
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ResourceNotFoundException("Member", memberId));
+        recurringDonation.setMember(member);
+
+        if (body.get("amount") == null) {
+            throw new BadRequestException("amount is required");
+        }
+        recurringDonation.setAmount(new BigDecimal(body.get("amount").toString()));
+
+        if (body.get("frequency") == null || body.get("frequency").toString().isBlank()) {
+            throw new BadRequestException("frequency is required");
+        }
+        recurringDonation.setFrequency(body.get("frequency").toString());
+
+        if (body.get("category") != null) {
+            recurringDonation.setCategory(body.get("category").toString());
+        }
+        if (body.get("paymentMethod") != null) {
+            recurringDonation.setPaymentMethod(body.get("paymentMethod").toString());
+        }
+        if (body.get("description") != null) {
+            recurringDonation.setDescription(body.get("description").toString());
+        }
+
+        LocalDate nextDue = body.get("nextDueDate") != null
+                ? LocalDate.parse(body.get("nextDueDate").toString())
+                : LocalDate.now().plusDays(1);
+        recurringDonation.setNextDueDate(nextDue);
+        recurringDonation.setActive(true);
+
+        return create(recurringDonation);
     }
 
     @Transactional
     public RecurringDonation create(RecurringDonation recurringDonation) {
         if (recurringDonation.getChurchId() == null) {
-            recurringDonation.setChurchId(TenantContext.getChurchId());
+            recurringDonation.setChurchId(TenantContext.requireChurchId());
+        }
+        if (recurringDonation.getNextDueDate() == null) {
+            recurringDonation.setNextDueDate(LocalDate.now().plusDays(1));
         }
         Long currentUserId = getCurrentUserId();
         if (currentUserId != null) {

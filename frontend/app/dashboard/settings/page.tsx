@@ -62,10 +62,10 @@ export default function ChurchSettingsPage() {
         address: data.address || "",
         city: data.city || "",
         state: data.state || "",
-        zip: data.zip || "",
+        zip: data.zipCode || data.zip || "",
         currency: data.currency || "USD",
         currencySymbol: data.currencySymbol || "$",
-        fiscalYearStartMonth: data.fiscalYearStartMonth || 1,
+        fiscalYearStartMonth: data.fiscalYearStart ?? data.fiscalYearStartMonth ?? 1,
         emailFromName: data.emailFromName || "",
         emailFromAddress: data.emailFromAddress || "",
       });
@@ -80,7 +80,11 @@ export default function ChurchSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.put("/church-settings", form);
+      await api.put("/church-settings", {
+        ...form,
+        zipCode: form.zip,
+        fiscalYearStart: form.fiscalYearStartMonth,
+      });
       toast.success("Settings saved successfully");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to save settings");

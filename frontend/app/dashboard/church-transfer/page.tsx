@@ -226,7 +226,7 @@ export default function ChurchTransferPage() {
           <TabsList>
             <TabsTrigger value="pending">Pending ({pendingTransfers.length})</TabsTrigger>
             <TabsTrigger value="completed">
-              Completed ({transfers.filter((t) => t.status === "APPROVED").length})
+              Completed ({transfers.filter((t) => t.status === "APPROVED" || t.status === "COMPLETED").length})
             </TabsTrigger>
             <TabsTrigger value="all">All ({transfers.length})</TabsTrigger>
           </TabsList>
@@ -246,7 +246,7 @@ export default function ChurchTransferPage() {
                 <CardTitle>Completed Transfers</CardTitle>
               </CardHeader>
               <CardContent>
-                {renderTable(transfers.filter((t) => t.status === "APPROVED"))}
+                {renderTable(transfers.filter((t) => t.status === "APPROVED" || t.status === "COMPLETED"))}
               </CardContent>
             </Card>
           </TabsContent>

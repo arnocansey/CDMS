@@ -279,10 +279,10 @@ export default function ForecastsPage() {
                       <td className="p-4 font-medium">{f.forecastName || f.name || "—"}</td>
                       <td className="p-4">
                         <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
-                          {f.type || "—"}
+                          {f.forecastType || f.type || "—"}
                         </span>
                       </td>
-                      <td className="p-4 text-muted-foreground">{f.date || f.createdAt || "—"}</td>
+                      <td className="p-4 text-muted-foreground">{f.forecastDate || f.date || f.createdAt || "—"}</td>
                       <td className="p-4 font-medium text-green-600">
                         ${(f.predictedIncome || 0).toLocaleString()}
                       </td>

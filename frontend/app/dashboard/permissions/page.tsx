@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Shield, Save, Lock } from "lucide-react";
+import { Save, Lock } from "lucide-react";
 
 const ROLES = ["ADMIN", "PASTOR", "TREASURER", "DEPARTMENT_LEADER", "MEMBER", "SECRETARY"] as const;
 
@@ -24,11 +24,27 @@ interface Permission {
   allowed: boolean;
 }
 
+/** Always build a full RESOURCES × ACTIONS grid so toggles always have rows to update. */
+function buildPermissionGrid(rows: Permission[]): Permission[] {
+  const map = new Map(rows.map((p) => [`${p.resource}:${p.action}`, !!p.allowed]));
+  const grid: Permission[] = [];
+  for (const resource of RESOURCES) {
+    for (const action of ACTIONS) {
+      grid.push({
+        resource,
+        action,
+        allowed: map.get(`${resource}:${action}`) ?? false,
+      });
+    }
+  }
+  return grid;
+}
+
 export default function PermissionsPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [activeRole, setActiveRole] = useState<string>("ADMIN");
-  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [activeRole, setActiveRole] = useState<string>("PASTOR");
+  const [permissions, setPermissions] = useState<Permission[]>(() => buildPermissionGrid([]));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -47,30 +63,37 @@ export default function PermissionsPage() {
   const fetchPermissions = async (role: string) => {
     setLoading(true);
     try {
+      if (role === "ADMIN") {
+        setPermissions(
+          buildPermissionGrid(
+            RESOURCES.flatMap((resource) =>
+              ACTIONS.map((action) => ({ resource, action, allowed: true }))
+            )
+          )
+        );
+        return;
+      }
+
       const response = await api.get(`/permissions/role/${role}`);
       const data = response.data;
       if (Array.isArray(data)) {
-        setPermissions(data);
-      } else if (data.permissions) {
-        setPermissions(data.permissions);
-      } else {
+        setPermissions(buildPermissionGrid(data));
+      } else if (data?.permissions && Array.isArray(data.permissions)) {
+        setPermissions(buildPermissionGrid(data.permissions));
+      } else if (data && typeof data === "object") {
         const initial: Permission[] = [];
         RESOURCES.forEach((resource) => {
           ACTIONS.forEach((action) => {
-            const found = data[resource]?.[action];
-            initial.push({ resource, action, allowed: !!found });
+            initial.push({ resource, action, allowed: !!data[resource]?.[action] });
           });
         });
-        setPermissions(initial);
+        setPermissions(buildPermissionGrid(initial));
+      } else {
+        setPermissions(buildPermissionGrid([]));
       }
-    } catch (error) {
-      const initial: Permission[] = [];
-      RESOURCES.forEach((resource) => {
-        ACTIONS.forEach((action) => {
-          initial.push({ resource, action, allowed: false });
-        });
-      });
-      setPermissions(initial);
+    } catch {
+      setPermissions(buildPermissionGrid([]));
+      toast.error("Failed to load permissions");
     } finally {
       setLoading(false);
     }
@@ -78,16 +101,19 @@ export default function PermissionsPage() {
 
   const togglePermission = (resource: string, action: string) => {
     if (activeRole === "ADMIN") return;
-    setPermissions((prev) =>
-      prev.map((p) =>
-        p.resource === resource && p.action === action
-          ? { ...p, allowed: !p.allowed }
-          : p
-      )
-    );
+    setPermissions((prev) => {
+      const exists = prev.some((p) => p.resource === resource && p.action === action);
+      if (!exists) {
+        return buildPermissionGrid([...prev, { resource, action, allowed: true }]);
+      }
+      return prev.map((p) =>
+        p.resource === resource && p.action === action ? { ...p, allowed: !p.allowed } : p
+      );
+    });
   };
 
   const handleSave = async () => {
+    if (activeRole === "ADMIN") return;
     setSaving(true);
     try {
       await api.put("/permissions", {
@@ -99,6 +125,7 @@ export default function PermissionsPage() {
         }, {} as Record<string, Record<string, boolean>>),
       });
       toast.success("Permissions saved successfully");
+      await fetchPermissions(activeRole);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to save permissions");
     } finally {
@@ -120,7 +147,7 @@ export default function PermissionsPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Role Permissions</h2>
           <p className="text-muted-foreground">Manage what each role can access</p>
@@ -132,9 +159,13 @@ export default function PermissionsPage() {
       </div>
 
       <Tabs value={activeRole} onValueChange={setActiveRole}>
-        <TabsList className="flex flex-wrap h-auto gap-1 bg-transparent p-0">
+        <TabsList className="flex h-auto flex-wrap gap-1 bg-transparent p-0">
           {ROLES.map((role) => (
-            <TabsTrigger key={role} value={role} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger
+              key={role}
+              value={role}
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
               {role.replace("_", " ")}
             </TabsTrigger>
           ))}

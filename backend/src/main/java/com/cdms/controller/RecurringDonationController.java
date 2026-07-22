@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/recurring-donations")
@@ -22,15 +23,15 @@ public class RecurringDonationController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TREASURER')")
     public ResponseEntity<List<RecurringDonation>> getActiveRecurring() {
-        Long churchId = TenantContext.getChurchId();
+        Long churchId = TenantContext.requireChurchId();
         List<RecurringDonation> recurring = recurringDonationService.getActiveRecurring(churchId);
         return ResponseEntity.ok(recurring);
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TREASURER')")
-    public ResponseEntity<RecurringDonation> create(@RequestBody RecurringDonation recurringDonation) {
-        RecurringDonation saved = recurringDonationService.create(recurringDonation);
+    public ResponseEntity<RecurringDonation> create(@RequestBody Map<String, Object> body) {
+        RecurringDonation saved = recurringDonationService.createFromRequest(body);
         return ResponseEntity.ok(saved);
     }
 

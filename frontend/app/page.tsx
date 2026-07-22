@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 import { branding } from "@/lib/branding";
+import { siteImages } from "@/lib/site-images";
 import { LandingNavbar } from "@/components/layout/landing-navbar";
 import { LandingFooter } from "@/components/layout/landing-footer";
 import { Button } from "@/components/ui/button";
@@ -105,30 +106,42 @@ export default function LandingPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <LandingNavbar />
+      <LandingNavbar variant="hero" />
 
       <main className="flex-1">
-        {/* Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 py-20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 sm:py-24">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <div className="mb-8 flex flex-col items-center gap-5">
+        {/* Hero — full-bleed church photography (pulls under sticky nav) */}
+        <section className="relative -mt-16 flex min-h-[100svh] items-center overflow-hidden pt-16">
+          <Image
+            src={siteImages.hero}
+            alt="Church sanctuary aisle"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover animate-ken-burns"
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/55 to-slate-950/80"
+            aria-hidden
+          />
+          <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center text-white">
+              <div className="mb-8 flex flex-col items-center gap-5 animate-fade-up">
                 <Image
                   src="/logo.png"
                   alt={`${branding.shortName} logo`}
                   width={88}
                   height={88}
-                  className="object-contain"
+                  className="object-contain drop-shadow-lg"
                   priority
                 />
                 <h1 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
                   {branding.shortName}
                 </h1>
               </div>
-              <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              <p className="text-lg leading-relaxed text-white/85 sm:text-xl animate-fade-up-delay">
                 {branding.tagline}
               </p>
-              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-up-delay-2">
                 {isAuthenticated ? (
                   <Button asChild size="lg" className="px-8">
                     <Link href="/dashboard">
@@ -144,7 +157,12 @@ export default function LandingPage() {
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg" className="px-8">
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="lg"
+                      className="border-white/40 bg-white/10 px-8 text-white hover:bg-white/20 hover:text-white"
+                    >
                       <Link href="/login">Sign In</Link>
                     </Button>
                   </>
@@ -186,8 +204,17 @@ export default function LandingPage() {
         </section>
 
         {/* How It Works */}
-        <section id="how-it-works" className="border-t bg-muted/30 py-24">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="how-it-works" className="relative overflow-hidden border-t py-24">
+          <Image
+            src={siteImages.stainedGlass}
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover opacity-[0.12] dark:opacity-[0.18]"
+            aria-hidden
+          />
+          <div className="absolute inset-0 bg-muted/60 dark:bg-muted/40" aria-hidden />
+          <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 Up and Running in Minutes
@@ -251,13 +278,24 @@ export default function LandingPage() {
         </section>
 
         {/* CTA */}
-        <section className="border-t bg-muted/30 py-24">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
+        <section className="relative overflow-hidden border-t py-24">
+          <Image
+            src={siteImages.congregation}
+            alt="People gathering in community"
+            fill
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/75 to-slate-950/70"
+            aria-hidden
+          />
+          <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center text-white">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 Ready to Transform Your Church?
               </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
+              <p className="mt-4 text-lg text-white/80">
                 Join churches already using CDMS to strengthen their communities.
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -276,8 +314,8 @@ export default function LandingPage() {
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-2 text-sm text-white/75">
+                      <CheckCircle2 className="h-4 w-4 text-white" />
                       No credit card required
                     </div>
                   </>

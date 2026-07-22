@@ -14,6 +14,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Church, ArrowLeft, ArrowRight, Mail, Lock, User, Check, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
+import { AuthBrandPanel } from "@/components/layout/auth-brand-panel";
+import { siteImages } from "@/lib/site-images";
 
 const churchRegistrationSchema = z.object({
   churchName: z.string().min(2, "Church name is required"),
@@ -94,44 +96,38 @@ export default function ChurchRegistrationPage() {
         <ThemeToggle />
       </div>
 
-      <div className="relative hidden w-1/2 items-center justify-center bg-gradient-to-br from-primary/90 via-primary to-primary/70 lg:flex">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10" />
-          <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-white/5" />
+      <AuthBrandPanel imageSrc={siteImages.hero} imageAlt="Church exterior">
+        <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+          <Church className="h-10 w-10 text-white" />
         </div>
-        <div className="relative z-10 max-w-md px-8 text-center text-white">
-          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-            <Church className="h-10 w-10 text-white" />
+        <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
+          Register Your Church
+        </h1>
+        <p className="mb-8 text-lg text-white/80">
+          Set up your church on {branding.shortName} in minutes. Start managing your
+          finances with transparency and accountability.
+        </p>
+        <div className="space-y-4 text-left text-sm text-white/80">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
+              <Check className="h-4 w-4" />
+            </div>
+            Free plan available — no credit card required
           </div>
-          <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
-            Register Your Church
-          </h1>
-          <p className="mb-8 text-lg text-white/80">
-            Set up your church on {branding.shortName} in minutes. Start managing your
-            finances with transparency and accountability.
-          </p>
-          <div className="space-y-4 text-left text-sm text-white/80">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
-                <Check className="h-4 w-4" />
-              </div>
-              Free plan available — no credit card required
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
+              <Check className="h-4 w-4" />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
-                <Check className="h-4 w-4" />
-              </div>
-              Full data isolation — your church&apos;s data is secure
+            Full data isolation — your church&apos;s data is secure
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
+              <Check className="h-4 w-4" />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
-                <Check className="h-4 w-4" />
-              </div>
-              Upgrade or downgrade plans anytime
-            </div>
+            Upgrade or downgrade plans anytime
           </div>
         </div>
-      </div>
+      </AuthBrandPanel>
 
       <div className="flex w-full items-center justify-center px-4 py-12 lg:w-1/2">
         <div className="w-full max-w-md space-y-7">

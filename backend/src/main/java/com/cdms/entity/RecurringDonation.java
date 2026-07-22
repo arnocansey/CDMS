@@ -15,7 +15,7 @@ public class RecurringDonation {
     @Column(name = "church_id", nullable = false)
     private Long churchId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "member_id")
     private Member member;
 

@@ -77,6 +77,10 @@ public class TwoFactorAuthService {
     }
 
     public void enable(Long userId, String code) {
+        enableAndReturnBackupCodes(userId, code);
+    }
+
+    public List<String> enableAndReturnBackupCodes(Long userId, String code) {
         TwoFactorAuth tfa = twoFactorAuthRepository.findByUserId(userId)
                 .orElseThrow(() -> new BadRequestException("2FA not set up for this user"));
 
@@ -91,7 +95,7 @@ public class TwoFactorAuthService {
         tfa.setEnabled(true);
         twoFactorAuthRepository.save(tfa);
 
-        generateBackupCodes(userId);
+        return generateBackupCodes(userId);
     }
 
     public void disable(Long userId, String password) {

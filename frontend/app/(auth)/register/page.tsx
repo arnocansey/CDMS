@@ -17,6 +17,8 @@ import { registerSchema, type RegisterFormData } from "@/lib/validations/auth";
 import {
   Eye, EyeOff, Church, ArrowRight, Mail, Lock, User, Check, X, Search, ChevronRight,
 } from "lucide-react";
+import { AuthBrandPanel } from "@/components/layout/auth-brand-panel";
+import { siteImages } from "@/lib/site-images";
 
 interface ChurchSearchResult {
   id: number;
@@ -143,46 +145,38 @@ export default function RegisterPage() {
         <ThemeToggle />
       </div>
 
-      {/* Left Panel - Branding */}
-      <div className="relative hidden w-1/2 items-center justify-center bg-gradient-to-br from-primary/90 via-primary to-primary/70 lg:flex">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10" />
-          <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-white/5" />
-          <div className="absolute right-20 top-1/3 h-48 w-48 rounded-full bg-white/5" />
+      <AuthBrandPanel imageSrc={siteImages.congregation} imageAlt="People gathering in community">
+        <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+          <Church className="h-10 w-10 text-white" />
         </div>
-        <div className="relative z-10 max-w-md px-8 text-center text-white">
-          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-            <Church className="h-10 w-10 text-white" />
+        <h1 className="mb-4 text-4xl font-bold tracking-tight">
+          Join Our Community
+        </h1>
+        <p className="mb-8 text-lg text-white/80">
+          Create your account and start managing your church&apos;s financial
+          operations with transparency and efficiency.
+        </p>
+        <div className="space-y-4 text-left text-sm text-white/80">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
+              <Check className="h-4 w-4" />
+            </div>
+            Track donations, tithes, and offerings in real time
           </div>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight">
-            Join Our Community
-          </h1>
-          <p className="mb-8 text-lg text-white/80">
-            Create your account and start managing your church&apos;s financial
-            operations with transparency and efficiency.
-          </p>
-          <div className="space-y-4 text-left text-sm text-white/80">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
-                <Check className="h-4 w-4" />
-              </div>
-              Track donations, tithes, and offerings in real time
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
+              <Check className="h-4 w-4" />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
-                <Check className="h-4 w-4" />
-              </div>
-              Generate financial reports and receipts instantly
+            Generate financial reports and receipts instantly
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
+              <Check className="h-4 w-4" />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
-                <Check className="h-4 w-4" />
-              </div>
-              Full audit trail for complete accountability
-            </div>
+            Full audit trail for complete accountability
           </div>
         </div>
-      </div>
+      </AuthBrandPanel>
 
       {/* Right Panel - Form */}
       <div className="flex w-full items-center justify-center px-4 py-12 lg:w-1/2">
