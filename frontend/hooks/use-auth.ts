@@ -32,6 +32,25 @@ interface RegisterData {
   churchId?: number;
 }
 
+function clearLegacyTokens() {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem("accessToken");
+  sessionStorage.removeItem("refreshToken");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+}
+
+function storeFallbackTokens(accessToken?: string, refreshToken?: string) {
+  if (typeof window === "undefined" || !accessToken) return;
+  // Short-lived sessionStorage fallback; primary auth is httpOnly cookies
+  sessionStorage.setItem("accessToken", accessToken);
+  if (refreshToken) {
+    sessionStorage.setItem("refreshToken", refreshToken);
+  }
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+}
+
 export const useAuth = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
@@ -39,16 +58,24 @@ export const useAuth = create<AuthState>((set) => ({
 
   initialize: async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        set({ isLoading: false });
-        return;
+      // Migrate any legacy localStorage tokens into sessionStorage once
+      if (typeof window !== "undefined") {
+        const legacyAccess = localStorage.getItem("accessToken");
+        const legacyRefresh = localStorage.getItem("refreshToken");
+        if (legacyAccess) {
+          sessionStorage.setItem("accessToken", legacyAccess);
+          localStorage.removeItem("accessToken");
+        }
+        if (legacyRefresh) {
+          sessionStorage.setItem("refreshToken", legacyRefresh);
+          localStorage.removeItem("refreshToken");
+        }
       }
+
       const response = await api.get("/auth/me");
       set({ user: response.data, isAuthenticated: true, isLoading: false });
     } catch {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      clearLegacyTokens();
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
@@ -56,16 +83,14 @@ export const useAuth = create<AuthState>((set) => ({
   login: async (email: string, password: string) => {
     const response = await api.post("/auth/login", { email, password });
     const { accessToken, refreshToken, user } = response.data;
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
+    storeFallbackTokens(accessToken, refreshToken);
     set({ user, isAuthenticated: true, isLoading: false });
   },
 
   register: async (data: RegisterData) => {
     const response = await api.post("/auth/register", data);
     const { accessToken, refreshToken, user } = response.data;
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
+    storeFallbackTokens(accessToken, refreshToken);
     set({ user, isAuthenticated: true, isLoading: false });
   },
 
@@ -73,8 +98,7 @@ export const useAuth = create<AuthState>((set) => ({
     try {
       await api.post("/auth/logout");
     } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      clearLegacyTokens();
       set({ user: null, isAuthenticated: false, isLoading: false });
       toast.success("Logged out successfully");
     }

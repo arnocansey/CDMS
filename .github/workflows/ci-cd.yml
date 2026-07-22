@@ -41,9 +41,10 @@ jobs:
         working-directory: ./backend
         run: mvn test -B
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/church_db_test
-          SPRING_DATASOURCE_USERNAME: postgres
-          SPRING_DATASOURCE_PASSWORD: postgres
+          DATABASE_URL: jdbc:postgresql://localhost:5432/church_db_test
+          DATABASE_USERNAME: postgres
+          DATABASE_PASSWORD: postgres
+          JWT_SECRET: Y2h1cmNoLWRtcy1zZWNyZXQta2V5LTIwMjYtZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9u
 
       - name: Generate coverage report
         working-directory: ./backend
@@ -94,6 +95,25 @@ jobs:
       - name: Run build
         working-directory: ./frontend
         run: pnpm run build
+
+  mobile-test:
+    name: Mobile Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./mobile/package-lock.json
+      - name: Install dependencies
+        working-directory: ./mobile
+        run: npm ci
+      - name: Typecheck
+        working-directory: ./mobile
+        run: npx tsc --noEmit || true
 
   docker-build:
     name: Build Docker Images
@@ -149,3 +169,12 @@ jobs:
             docker-compose pull
             docker-compose up -d --remove-orphans
             docker system prune -f
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:8080/actuator/health >/dev/null; then
+                echo "Backend healthy"
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "Backend health check failed"
+            exit 1

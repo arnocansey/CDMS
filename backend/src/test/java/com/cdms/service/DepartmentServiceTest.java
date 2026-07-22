@@ -7,6 +7,8 @@ import com.cdms.exception.BadRequestException;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.DepartmentRepository;
 import com.cdms.repository.MemberRepository;
+import com.cdms.security.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,26 +42,44 @@ class DepartmentServiceTest {
 
     @BeforeEach
     void setUp() {
+        TenantContext.setChurchId(1L);
+
         leader = new Member();
         leader.setId(1L);
+        leader.setChurchId(1L);
         leader.setFirstName("Jane");
         leader.setLastName("Leader");
 
         department = new Department();
         department.setId(1L);
+        department.setChurchId(1L);
         department.setName("Youth Department");
         department.setDescription("Youth ministry programs");
         department.setLeader(leader);
     }
 
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
+    }
+
     @Test
     void getAllDepartments_Success() {
-        when(departmentRepository.findAll()).thenReturn(Arrays.asList(department));
+        when(departmentRepository.findByChurchId(1L)).thenReturn(Arrays.asList(department));
 
         List<DepartmentDto> result = departmentService.getAllDepartments();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Youth Department");
+    }
+
+    @Test
+    void getAllDepartments_NoChurchContext_ThrowsBadRequest() {
+        TenantContext.clear();
+
+        assertThatThrownBy(() -> departmentService.getAllDepartments())
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("No church context set");
     }
 
     @Test
@@ -83,7 +103,7 @@ class DepartmentServiceTest {
 
     @Test
     void createDepartment_Success() {
-        when(departmentRepository.existsByName("Youth Department")).thenReturn(false);
+        when(departmentRepository.existsByNameAndChurchId("Youth Department", 1L)).thenReturn(false);
         when(memberRepository.findById(1L)).thenReturn(Optional.of(leader));
         when(departmentRepository.save(any(Department.class))).thenReturn(department);
 
@@ -101,7 +121,7 @@ class DepartmentServiceTest {
 
     @Test
     void createDepartment_DuplicateName_ThrowsException() {
-        when(departmentRepository.existsByName("Youth Department")).thenReturn(true);
+        when(departmentRepository.existsByNameAndChurchId("Youth Department", 1L)).thenReturn(true);
 
         DepartmentDto dto = new DepartmentDto();
         dto.setName("Youth Department");

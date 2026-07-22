@@ -37,10 +37,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Page<UserDto> getAllUsers(Pageable pageable) {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return userRepository.findAll(pageable).map(this::mapToDto);
-        }
+        Long churchId = TenantContext.requireChurchId();
         return userRepository.findByChurchId(churchId, pageable).map(this::mapToDto);
     }
 

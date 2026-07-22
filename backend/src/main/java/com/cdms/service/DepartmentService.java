@@ -26,12 +26,7 @@ public class DepartmentService {
     }
 
     public List<DepartmentDto> getAllDepartments() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return departmentRepository.findAll().stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return departmentRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());

@@ -23,6 +23,7 @@ public class FinancialController {
     }
 
     @GetMapping("/donations")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER')")
     public ResponseEntity<List<DonationDto>> getDonations(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -40,6 +41,7 @@ public class FinancialController {
     }
 
     @GetMapping("/tithes")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER')")
     public ResponseEntity<List<TitheDto>> getTithes(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -57,6 +59,7 @@ public class FinancialController {
     }
 
     @GetMapping("/offerings")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER')")
     public ResponseEntity<List<OfferingDto>> getOfferings(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -74,6 +77,7 @@ public class FinancialController {
     }
 
     @GetMapping("/expenses")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER')")
     public ResponseEntity<List<ExpenseDto>> getExpenses(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {

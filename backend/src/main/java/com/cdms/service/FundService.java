@@ -39,12 +39,7 @@ public class FundService {
     }
 
     public List<FundDto> getAllFunds() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return fundRepository.findAll().stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return fundRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -61,12 +56,7 @@ public class FundService {
     }
 
     public List<FundDto> getActiveFunds() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return fundRepository.findByActiveTrue().stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return fundRepository.findByChurchIdAndActiveTrue(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -144,8 +134,8 @@ public class FundService {
     }
 
     public Map<String, Object> getFundSummary() {
-        Long churchId = TenantContext.getChurchId();
-        List<Fund> funds = churchId == null ? fundRepository.findByActiveTrue() : fundRepository.findByChurchIdAndActiveTrue(churchId);
+        Long churchId = TenantContext.requireChurchId();
+        List<Fund> funds = fundRepository.findByChurchIdAndActiveTrue(churchId);
         BigDecimal totalBalance = funds.stream()
                 .map(Fund::getCurrentBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

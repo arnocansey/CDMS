@@ -6,11 +6,13 @@ import com.cdms.entity.FinancialGoal;
 import com.cdms.entity.GoalContribution;
 import com.cdms.entity.Member;
 import com.cdms.entity.User;
-import com.cdms.exception.ResourceNotFoundException;
+import com.cdms.exception.BadRequestException;
 import com.cdms.repository.FinancialGoalRepository;
 import com.cdms.repository.GoalContributionRepository;
 import com.cdms.repository.MemberRepository;
 import com.cdms.repository.UserRepository;
+import com.cdms.security.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -56,17 +59,21 @@ class FinancialGoalServiceTest {
 
     @BeforeEach
     void setUp() {
+        TenantContext.setChurchId(1L);
+
         user = new User();
         user.setId(1L);
         user.setEmail("admin@cdms.com");
 
         member = new Member();
         member.setId(1L);
+        member.setChurchId(1L);
         member.setFirstName("John");
         member.setLastName("Doe");
 
         financialGoal = new FinancialGoal();
         financialGoal.setId(1L);
+        financialGoal.setChurchId(1L);
         financialGoal.setName("Building Fund");
         financialGoal.setDescription("New church building");
         financialGoal.setTargetAmount(BigDecimal.valueOf(100000));
@@ -82,6 +89,11 @@ class FinancialGoalServiceTest {
         goalContribution.setAmount(BigDecimal.valueOf(1000));
         goalContribution.setContributionDate(LocalDate.now());
         goalContribution.setPaymentMethod("CASH");
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     @Test
@@ -150,11 +162,20 @@ class FinancialGoalServiceTest {
 
     @Test
     void getAllGoals_Success() {
-        when(financialGoalRepository.findAll()).thenReturn(Arrays.asList(financialGoal));
+        when(financialGoalRepository.findByChurchId(1L)).thenReturn(Arrays.asList(financialGoal));
 
         List<FinancialGoalDto> result = financialGoalService.getAllGoals();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Building Fund");
+    }
+
+    @Test
+    void getAllGoals_NoChurchContext_ThrowsBadRequest() {
+        TenantContext.clear();
+
+        assertThatThrownBy(() -> financialGoalService.getAllGoals())
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("No church context set");
     }
 }

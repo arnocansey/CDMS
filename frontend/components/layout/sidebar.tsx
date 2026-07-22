@@ -34,6 +34,7 @@ import {
   Download,
   GitCompare,
   CalendarDays,
+  Calendar,
   MapPin,
   UsersRound,
   ArrowLeftRight,
@@ -41,6 +42,8 @@ import {
   Key,
   Palette,
   ShieldCheck,
+  Megaphone,
+  Heart,
 } from "lucide-react";
 
 interface NavItem {
@@ -55,6 +58,8 @@ const coreNav: NavItem[] = [
   { name: "Members", href: "/dashboard/members", icon: Users, roles: ["ADMIN", "PASTOR", "SECRETARY"] },
   { name: "Attendance", href: "/dashboard/attendance", icon: ClipboardList, roles: ["ADMIN", "PASTOR", "SECRETARY"] },
   { name: "Visitors", href: "/dashboard/visitors", icon: UsersRound, roles: ["ADMIN", "PASTOR", "SECRETARY"] },
+  { name: "Departments", href: "/dashboard/departments", icon: Building2, roles: ["ADMIN", "PASTOR", "SECRETARY"] },
+  { name: "Prayer Requests", href: "/dashboard/prayer-requests", icon: Heart, roles: ["ADMIN", "PASTOR", "SECRETARY", "MEMBER"] },
 ];
 
 const financeNav: NavItem[] = [
@@ -84,6 +89,8 @@ const insightsNav: NavItem[] = [
 
 const calendarNav: NavItem[] = [
   { name: "Calendar", href: "/dashboard/calendar", icon: CalendarDays, roles: ["ADMIN", "PASTOR", "SECRETARY", "TREASURER", "MEMBER"] },
+  { name: "Events", href: "/dashboard/events", icon: Calendar, roles: ["ADMIN", "PASTOR", "SECRETARY", "MEMBER"] },
+  { name: "Announcements", href: "/dashboard/announcements", icon: Megaphone, roles: ["ADMIN", "PASTOR", "SECRETARY", "MEMBER"] },
   { name: "Church Directory", href: "/dashboard/directory", icon: MapPin, roles: ["ADMIN", "PASTOR", "MEMBER"] },
 ];
 

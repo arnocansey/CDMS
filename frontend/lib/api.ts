@@ -5,21 +5,21 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 api.interceptors.request.use(
   (config) => {
+    // Prefer httpOnly cookie auth; keep Bearer header as fallback for legacy sessions
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("accessToken");
+      const token = sessionStorage.getItem("accessToken");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
@@ -31,24 +31,33 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
-        if (refreshToken) {
-          const response = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
-            { refreshToken }
-          );
+        const refreshToken = typeof window !== "undefined"
+          ? sessionStorage.getItem("refreshToken")
+          : null;
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"}/auth/refresh`,
+          refreshToken ? { refreshToken } : {},
+          { withCredentials: true }
+        );
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
-          localStorage.setItem("accessToken", accessToken);
-          localStorage.setItem("refreshToken", newRefreshToken);
-
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        if (typeof window !== "undefined" && accessToken) {
+          // Optional short-lived memory/session fallback for same-origin API proxies
+          sessionStorage.setItem("accessToken", accessToken);
+          if (newRefreshToken) {
+            sessionStorage.setItem("refreshToken", newRefreshToken);
+          }
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return api(originalRequest);
         }
-      } catch (refreshError) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        window.location.href = "/login";
+        return api(originalRequest);
+      } catch {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("accessToken");
+          sessionStorage.removeItem("refreshToken");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          window.location.href = "/login";
+        }
       }
     }
 

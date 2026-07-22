@@ -336,17 +336,18 @@ public class FinancialService {
     }
 
     public List<Map<String, Object>> getTopContributors(int limit) {
+        Long churchId = TenantContext.requireChurchId();
         Map<Long, BigDecimal> memberTotals = new HashMap<>();
         Map<Long, String> memberNames = new HashMap<>();
 
-        List<Tithe> allTithes = titheRepository.findAll();
+        List<Tithe> allTithes = titheRepository.findByChurchId(churchId);
         for (Tithe tithe : allTithes) {
             Long memberId = tithe.getMember().getId();
             memberTotals.merge(memberId, tithe.getAmount(), BigDecimal::add);
             memberNames.putIfAbsent(memberId, tithe.getMember().getFirstName() + " " + tithe.getMember().getLastName());
         }
 
-        List<Donation> allDonations = donationRepository.findAll();
+        List<Donation> allDonations = donationRepository.findByChurchId(churchId);
         for (Donation donation : allDonations) {
             if (donation.getMember() != null) {
                 Long memberId = donation.getMember().getId();

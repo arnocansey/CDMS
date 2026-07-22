@@ -20,9 +20,16 @@ jest.mock("@/hooks/use-queries", () => ({
   }),
 }));
 
+jest.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({
+    invalidateQueries: jest.fn(),
+  }),
+}));
+
 jest.mock("@/lib/api", () => ({
   default: {
     put: jest.fn().mockResolvedValue({}),
+    post: jest.fn().mockResolvedValue({}),
   },
 }));
 

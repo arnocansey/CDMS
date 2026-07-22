@@ -77,8 +77,9 @@ export default function ReportsPage() {
 
       const url = `${API_BASE}${report.endpoint}${params.toString() ? "?" + params.toString() : ""}`;
       const response = await fetch(url, {
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("accessToken") || ""}`,
         },
       });
 

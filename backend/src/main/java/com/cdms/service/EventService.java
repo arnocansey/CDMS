@@ -22,36 +22,21 @@ public class EventService {
     }
 
     public List<EventDto> getAllEvents() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return eventRepository.findAll().stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return eventRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public List<EventDto> getUpcomingEvents() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return eventRepository.findUpcomingEvents(LocalDate.now()).stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return eventRepository.findUpcomingEventsByChurchId(churchId, LocalDate.now()).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public List<EventDto> getEventsByDateRange(LocalDate startDate, LocalDate endDate) {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return eventRepository.findByEventDateBetween(startDate, endDate).stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return eventRepository.findByChurchId(churchId).stream()
                 .filter(e -> !e.getEventDate().isBefore(startDate) && !e.getEventDate().isAfter(endDate))
                 .map(this::mapToDto)
@@ -118,10 +103,7 @@ public class EventService {
     }
 
     public long getUpcomingEventsCount() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return eventRepository.findUpcomingEvents(LocalDate.now()).size();
-        }
+        Long churchId = TenantContext.requireChurchId();
         return eventRepository.findUpcomingEventsByChurchId(churchId, LocalDate.now()).size();
     }
 

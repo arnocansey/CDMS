@@ -1,9 +1,9 @@
 package com.cdms.controller;
 
-import com.cdms.entity.EmailDigest;
 import com.cdms.security.TenantContext;
 import com.cdms.service.EmailDigestService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -19,8 +19,9 @@ public class EmailDigestController {
     }
 
     @PostMapping("/subscribe")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARY')")
     public ResponseEntity<Map<String, String>> subscribe(@RequestBody Map<String, String> request) {
-        Long churchId = TenantContext.getChurchId();
+        Long churchId = TenantContext.requireChurchId();
         String email = request.get("email");
         String name = request.get("name");
         String type = request.get("type");
@@ -37,8 +38,9 @@ public class EmailDigestController {
     }
 
     @DeleteMapping("/unsubscribe")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARY')")
     public ResponseEntity<Map<String, String>> unsubscribe(@RequestBody Map<String, String> request) {
-        Long churchId = TenantContext.getChurchId();
+        Long churchId = TenantContext.requireChurchId();
         String email = request.get("email");
 
         if (email == null || email.isBlank()) {
@@ -50,13 +52,15 @@ public class EmailDigestController {
     }
 
     @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARY')")
     public ResponseEntity<Map<String, Object>> getDigestStats() {
-        Long churchId = TenantContext.getChurchId();
+        Long churchId = TenantContext.requireChurchId();
         Map<String, Object> stats = emailDigestService.getDigestStats(churchId);
         return ResponseEntity.ok(stats);
     }
 
     @PostMapping("/send/{type}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> sendDigests(@PathVariable String type) {
         emailDigestService.sendDigests(type);
         return ResponseEntity.ok(Map.of("message", type + " digest send triggered successfully"));

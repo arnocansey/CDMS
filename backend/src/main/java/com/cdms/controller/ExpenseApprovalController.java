@@ -1,6 +1,7 @@
 package com.cdms.controller;
 
 import com.cdms.entity.Expense;
+import com.cdms.security.TenantContext;
 import com.cdms.service.ExpenseApprovalService;
 import com.cdms.service.UserService;
 import com.cdms.entity.User;
@@ -26,7 +27,8 @@ public class ExpenseApprovalController {
 
     @GetMapping("/api/expenses/pending")
     @PreAuthorize("hasAnyRole('ADMIN', 'TREASURER')")
-    public ResponseEntity<List<Expense>> getPendingExpenses(@RequestParam(defaultValue = "1") Long churchId) {
+    public ResponseEntity<List<Expense>> getPendingExpenses() {
+        Long churchId = TenantContext.requireChurchId();
         List<Expense> pending = expenseApprovalService.getPendingExpenses(churchId);
         return ResponseEntity.ok(pending);
     }

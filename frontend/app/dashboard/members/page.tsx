@@ -39,7 +39,7 @@ export default function MembersPage() {
     page?: number;
     size?: number;
     search?: string;
-  }>({});
+  }>({ page: 0, size: 20 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
 
@@ -47,6 +47,8 @@ export default function MembersPage() {
   const { data: departments = [] } = useDepartments();
   const { data: branches = [] } = useBranches();
   const members = data?.content ?? [];
+  const totalPages = data?.totalPages ?? 0;
+  const currentPage = searchParams.page ?? 0;
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<MemberFormData>({
     resolver: zodResolver(memberSchema),
@@ -106,6 +108,7 @@ export default function MembersPage() {
   const searchMembers = () => {
     setSearchParams((prev) => ({
       ...prev,
+      page: 0,
       search: searchQuery.trim() || undefined,
     }));
   };
@@ -327,6 +330,41 @@ export default function MembersPage() {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t px-4 py-3">
+              <p className="text-sm text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 0}
+                  onClick={() =>
+                    setSearchParams((prev) => ({
+                      ...prev,
+                      page: Math.max(0, (prev.page ?? 0) - 1),
+                    }))
+                  }
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages - 1}
+                  onClick={() =>
+                    setSearchParams((prev) => ({
+                      ...prev,
+                      page: (prev.page ?? 0) + 1,
+                    }))
+                  }
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

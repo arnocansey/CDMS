@@ -46,12 +46,7 @@ public class FinancialGoalService {
     }
 
     public List<FinancialGoalDto> getAllGoals() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return financialGoalRepository.findAll().stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return financialGoalRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -68,12 +63,7 @@ public class FinancialGoalService {
     }
 
     public List<FinancialGoalDto> getActiveGoals() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return financialGoalRepository.findByStatus("ACTIVE").stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return financialGoalRepository.findByChurchIdAndStatus(churchId, "ACTIVE").stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -183,8 +173,8 @@ public class FinancialGoalService {
     }
 
     public Map<String, Object> getGoalSummary() {
-        Long churchId = TenantContext.getChurchId();
-        List<FinancialGoal> allGoals = churchId == null ? financialGoalRepository.findAll() : financialGoalRepository.findByChurchId(churchId);
+        Long churchId = TenantContext.requireChurchId();
+        List<FinancialGoal> allGoals = financialGoalRepository.findByChurchId(churchId);
         List<FinancialGoal> activeGoals = allGoals.stream()
                 .filter(g -> "ACTIVE".equals(g.getStatus()))
                 .collect(Collectors.toList());

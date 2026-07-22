@@ -45,12 +45,7 @@ public class PledgeService {
 
     @Transactional(readOnly = true)
     public List<PledgeDto> getAllPledges() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return pledgeRepository.findAll().stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return pledgeRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -69,12 +64,7 @@ public class PledgeService {
 
     @Transactional(readOnly = true)
     public List<PledgeDto> getPledgesByMember(Long memberId) {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return pledgeRepository.findByMemberId(memberId).stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return pledgeRepository.findByChurchId(churchId).stream()
                 .filter(p -> p.getMember() != null && p.getMember().getId().equals(memberId))
                 .map(this::mapToDto)
@@ -83,12 +73,7 @@ public class PledgeService {
 
     @Transactional(readOnly = true)
     public List<PledgeDto> getActivePledges() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return pledgeRepository.findByStatus("ACTIVE").stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return pledgeRepository.findByChurchIdAndStatus(churchId, "ACTIVE").stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -96,13 +81,7 @@ public class PledgeService {
 
     @Transactional(readOnly = true)
     public List<PledgeDto> getOverduePledges() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return pledgeRepository.findByStatus("ACTIVE").stream()
-                    .filter(p -> p.getDueDate() != null && p.getDueDate().isBefore(LocalDate.now()))
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return pledgeRepository.findByChurchIdAndStatus(churchId, "ACTIVE").stream()
                 .filter(p -> p.getDueDate() != null && p.getDueDate().isBefore(LocalDate.now()))
                 .map(this::mapToDto)
@@ -217,34 +196,16 @@ public class PledgeService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getPledgeSummary() {
-        Long churchId = TenantContext.getChurchId();
-        BigDecimal totalPledged;
-        BigDecimal totalPaid;
-        long activeCount;
-        long completedCount;
-        long overdueCount;
-
-        if (churchId == null) {
-            totalPledged = pledgeRepository.sumPledgeAmountByStatus("ACTIVE")
-                    .add(pledgeRepository.sumPledgeAmountByStatus("COMPLETED"))
-                    .add(pledgeRepository.sumPledgeAmountByStatus("OVERDUE"));
-            totalPaid = pledgeRepository.sumAmountPaidByStatus("ACTIVE")
-                    .add(pledgeRepository.sumAmountPaidByStatus("COMPLETED"))
-                    .add(pledgeRepository.sumAmountPaidByStatus("OVERDUE"));
-            activeCount = pledgeRepository.findByStatus("ACTIVE").size();
-            completedCount = pledgeRepository.findByStatus("COMPLETED").size();
-            overdueCount = getOverduePledges().size();
-        } else {
-            totalPledged = pledgeRepository.sumPledgeAmountByChurchIdAndStatus(churchId, "ACTIVE")
-                    .add(pledgeRepository.sumPledgeAmountByChurchIdAndStatus(churchId, "COMPLETED"))
-                    .add(pledgeRepository.sumPledgeAmountByChurchIdAndStatus(churchId, "OVERDUE"));
-            totalPaid = pledgeRepository.sumAmountPaidByChurchIdAndStatus(churchId, "ACTIVE")
-                    .add(pledgeRepository.sumAmountPaidByChurchIdAndStatus(churchId, "COMPLETED"))
-                    .add(pledgeRepository.sumAmountPaidByChurchIdAndStatus(churchId, "OVERDUE"));
-            activeCount = pledgeRepository.findByChurchIdAndStatus(churchId, "ACTIVE").size();
-            completedCount = pledgeRepository.findByChurchIdAndStatus(churchId, "COMPLETED").size();
-            overdueCount = getOverduePledges().size();
-        }
+        Long churchId = TenantContext.requireChurchId();
+        BigDecimal totalPledged = pledgeRepository.sumPledgeAmountByChurchIdAndStatus(churchId, "ACTIVE")
+                .add(pledgeRepository.sumPledgeAmountByChurchIdAndStatus(churchId, "COMPLETED"))
+                .add(pledgeRepository.sumPledgeAmountByChurchIdAndStatus(churchId, "OVERDUE"));
+        BigDecimal totalPaid = pledgeRepository.sumAmountPaidByChurchIdAndStatus(churchId, "ACTIVE")
+                .add(pledgeRepository.sumAmountPaidByChurchIdAndStatus(churchId, "COMPLETED"))
+                .add(pledgeRepository.sumAmountPaidByChurchIdAndStatus(churchId, "OVERDUE"));
+        long activeCount = pledgeRepository.findByChurchIdAndStatus(churchId, "ACTIVE").size();
+        long completedCount = pledgeRepository.findByChurchIdAndStatus(churchId, "COMPLETED").size();
+        long overdueCount = getOverduePledges().size();
         BigDecimal totalOutstanding = totalPledged.subtract(totalPaid);
 
         Map<String, Object> summary = new HashMap<>();

@@ -113,8 +113,8 @@ mvn spring-boot:run
 
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ### Mobile Setup
@@ -133,54 +133,30 @@ docker-compose up -d
 
 ## API Endpoints
 
+Core endpoints (see `docs/API_DOCUMENTATION.md` for the full surface — ~49 controllers):
+
 ### Authentication
-- `POST /api/auth/login` - User login
+- `POST /api/auth/login` - User login (sets httpOnly auth cookies)
 - `POST /api/auth/register` - User registration
-- `POST /api/auth/refresh` - Refresh token
+- `POST /api/auth/refresh` - Refresh token (cookie or body)
 - `POST /api/auth/logout` - User logout
 
-### Members
-- `GET /api/members` - Get all members
-- `POST /api/members` - Create member
-- `PUT /api/members/{id}` - Update member
-- `DELETE /api/members/{id}` - Delete member
-
-### Attendance
-- `GET /api/attendance` - Get attendance by date
-- `POST /api/attendance` - Record attendance
+### Members / Attendance / Visitors
+- `GET|POST /api/members`, `PUT|DELETE /api/members/{id}`
+- `GET|POST /api/attendance`
+- `GET|POST /api/visitors`
 
 ### Finance
-- `GET /api/finance/donations` - Get donations
-- `POST /api/finance/donations` - Record donation
-- `GET /api/finance/tithes` - Get tithes
-- `POST /api/finance/tithes` - Record tithe
-- `GET /api/finance/offerings` - Get offerings
-- `POST /api/finance/offerings` - Record offering
-- `GET /api/finance/expenses` - Get expenses
-- `POST /api/finance/expenses` - Record expense
+- `GET|POST /api/finance/donations|tithes|offerings|expenses`
+- `GET /api/finance/members/{id}/contributions`
+- Funds, budgets, pledges, goals, cash-flow, receipts, recurring, bank reconciliation
 
-### Events
-- `GET /api/events` - Get all events
-- `POST /api/events` - Create event
-- `PUT /api/events/{id}` - Update event
-- `DELETE /api/events/{id}` - Delete event
+### Operations
+- Events, announcements, departments, prayer requests
+- Analytics, forecasts, reports (PDF/Excel), donor retention
 
-### Announcements
-- `GET /api/announcements` - Get all announcements
-- `POST /api/announcements` - Create announcement
-
-### Prayer Requests
-- `GET /api/prayer-requests` - Get all prayer requests
-- `POST /api/prayer-requests` - Create prayer request
-- `PUT /api/prayer-requests/{id}/approve` - Approve request
-- `PUT /api/prayer-requests/{id}/answered` - Mark as answered
-
-### Reports
-- `GET /api/reports/membership/pdf` - Membership report (PDF)
-- `GET /api/reports/membership/excel` - Membership report (Excel)
-- `GET /api/reports/financial/pdf` - Financial report (PDF)
-- `GET /api/reports/financial/excel` - Financial report (Excel)
-- `GET /api/reports/attendance/pdf` - Attendance report (PDF)
+### Platform
+- Multi-church admin, subscriptions (Paystack), API keys, white-label branding, 2FA, audit logs, CSV import
 
 ## Documentation
 
@@ -194,13 +170,15 @@ docker-compose up -d
 ## Environment Variables
 
 ### Backend
-- `SPRING_DATASOURCE_URL` - Database URL
-- `SPRING_DATASOURCE_USERNAME` - Database username
-- `SPRING_DATASOURCE_PASSWORD` - Database password
-- `JWT_SECRET` - JWT secret key
+- `DATABASE_URL` - JDBC PostgreSQL URL
+- `DATABASE_USERNAME` / `DATABASE_PASSWORD` - Database credentials
+- `JWT_SECRET` - Base64-encoded secret (>= 256 bits); **required in production**
+- `CORS_ALLOWED_ORIGINS` - Comma-separated allowed origins (default `http://localhost:3000`)
+- `COOKIE_SECURE` - Set `true` behind HTTPS
+- `PAYSTACK_SECRET_KEY` / `PAYSTACK_PUBLIC_KEY` / `PAYSTACK_WEBHOOK_SECRET`
 
 ### Frontend
-- `NEXT_PUBLIC_API_URL` - Backend API URL
+- `NEXT_PUBLIC_API_URL` - Backend API URL (e.g. `http://localhost:8080/api`)
 
 ### Mobile
 - `EXPO_PUBLIC_API_URL` - Backend API URL

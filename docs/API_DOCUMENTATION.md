@@ -606,3 +606,25 @@ Authorization: Bearer {token}
   "error": "Too many requests. Please try again later."
 }
 ```
+
+---
+
+## Auth cookies & multi-tenancy
+
+- Login/register/refresh set httpOnly cookies (`cdms_access_token`, `cdms_refresh_token`) in addition to returning tokens in the JSON body (for mobile Bearer clients).
+- Web clients should call the API with `credentials: "include"` / Axios `withCredentials: true`.
+- JWT claim `churchId` scopes tenant data. The `X-Church-Id` header may only override tenant context for `PLATFORM_ADMIN`; other roles receive `403` on mismatch.
+
+## Additional API modules (summary)
+
+| Area | Base paths |
+|------|------------|
+| Funds / Budgets / Pledges | `/api/funds`, `/api/budgets`, `/api/pledges`, `/api/pledge-payments` |
+| Goals / Cash flow / Receipts | `/api/financial-goals`, `/api/cash-flow`, `/api/receipts` |
+| Recurring | `/api/recurring-donations`, `/api/recurring-expenses` |
+| Analytics | `/api/analytics/*`, `/api/forecasts`, `/api/financial-health` |
+| Platform | `/api/subscriptions`, `/api/2fa`, `/api/api-keys`, `/api/white-label` |
+| Admin | `/api/admin/churches`, `/api/admin/church-comparison`, `/api/audit-logs` |
+| Ops | `/api/import`, `/api/bank-reconciliation`, `/api/church-transfers`, `/api/email-digest` |
+
+Full OpenAPI/Swagger UI is available at `/swagger-ui` when the backend is running.

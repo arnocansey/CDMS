@@ -2,8 +2,11 @@ package com.cdms.service;
 
 import com.cdms.dto.AnnouncementDto;
 import com.cdms.entity.Announcement;
+import com.cdms.exception.BadRequestException;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.AnnouncementRepository;
+import com.cdms.security.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,8 +37,11 @@ class AnnouncementServiceTest {
 
     @BeforeEach
     void setUp() {
+        TenantContext.setChurchId(1L);
+
         announcement = new Announcement();
         announcement.setId(1L);
+        announcement.setChurchId(1L);
         announcement.setTitle("Church Service Update");
         announcement.setContent("This Sunday we have a special service.");
         announcement.setPublishDate(LocalDate.now());
@@ -43,9 +49,14 @@ class AnnouncementServiceTest {
         announcement.setCreatedBy("Pastor Smith");
     }
 
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
+    }
+
     @Test
     void getAllAnnouncements_Success() {
-        when(announcementRepository.findAll()).thenReturn(Arrays.asList(announcement));
+        when(announcementRepository.findByChurchId(1L)).thenReturn(Arrays.asList(announcement));
 
         List<AnnouncementDto> result = announcementService.getAllAnnouncements();
 
@@ -54,8 +65,17 @@ class AnnouncementServiceTest {
     }
 
     @Test
+    void getAllAnnouncements_NoChurchContext_ThrowsBadRequest() {
+        TenantContext.clear();
+
+        assertThatThrownBy(() -> announcementService.getAllAnnouncements())
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("No church context set");
+    }
+
+    @Test
     void getActiveAnnouncements_Success() {
-        when(announcementRepository.findActiveAnnouncements(any(LocalDate.class)))
+        when(announcementRepository.findActiveAnnouncementsByChurchId(1L, LocalDate.now()))
                 .thenReturn(Arrays.asList(announcement));
 
         List<AnnouncementDto> result = announcementService.getActiveAnnouncements();

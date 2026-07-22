@@ -5,10 +5,12 @@ import com.cdms.dto.FundTransactionDto;
 import com.cdms.entity.Fund;
 import com.cdms.entity.FundTransaction;
 import com.cdms.entity.User;
-import com.cdms.exception.ResourceNotFoundException;
+import com.cdms.exception.BadRequestException;
 import com.cdms.repository.FundRepository;
 import com.cdms.repository.FundTransactionRepository;
 import com.cdms.repository.UserRepository;
+import com.cdms.security.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -52,12 +55,15 @@ class FundServiceTest {
 
     @BeforeEach
     void setUp() {
+        TenantContext.setChurchId(1L);
+
         user = new User();
         user.setId(1L);
         user.setEmail("admin@cdms.com");
 
         fund = new Fund();
         fund.setId(1L);
+        fund.setChurchId(1L);
         fund.setName("Building Fund");
         fund.setFundType("BUILDING");
         fund.setOpeningBalance(BigDecimal.valueOf(10000));
@@ -73,6 +79,12 @@ class FundServiceTest {
         fundTransaction.setAmount(BigDecimal.valueOf(500));
         fundTransaction.setDescription("Donation for building fund");
         fundTransaction.setTransactionDate(LocalDate.now());
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -129,12 +141,21 @@ class FundServiceTest {
 
     @Test
     void getAllFunds_Success() {
-        when(fundRepository.findAll()).thenReturn(Arrays.asList(fund));
+        when(fundRepository.findByChurchId(1L)).thenReturn(Arrays.asList(fund));
 
         List<FundDto> result = fundService.getAllFunds();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Building Fund");
+    }
+
+    @Test
+    void getAllFunds_NoChurchContext_ThrowsBadRequest() {
+        TenantContext.clear();
+
+        assertThatThrownBy(() -> fundService.getAllFunds())
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("No church context set");
     }
 
     @Test

@@ -6,11 +6,13 @@ import com.cdms.entity.Member;
 import com.cdms.entity.Pledge;
 import com.cdms.entity.PledgePayment;
 import com.cdms.entity.User;
-import com.cdms.exception.ResourceNotFoundException;
+import com.cdms.exception.BadRequestException;
 import com.cdms.repository.MemberRepository;
 import com.cdms.repository.PledgePaymentRepository;
 import com.cdms.repository.PledgeRepository;
 import com.cdms.repository.UserRepository;
+import com.cdms.security.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -56,17 +59,21 @@ class PledgeServiceTest {
 
     @BeforeEach
     void setUp() {
+        TenantContext.setChurchId(1L);
+
         user = new User();
         user.setId(1L);
         user.setEmail("admin@cdms.com");
 
         member = new Member();
         member.setId(1L);
+        member.setChurchId(1L);
         member.setFirstName("John");
         member.setLastName("Doe");
 
         pledge = new Pledge();
         pledge.setId(1L);
+        pledge.setChurchId(1L);
         pledge.setMember(member);
         pledge.setPledgeType("BUILDING");
         pledge.setDescription("Building pledge");
@@ -82,6 +89,11 @@ class PledgeServiceTest {
         pledgePayment.setAmount(BigDecimal.valueOf(500));
         pledgePayment.setPaymentDate(LocalDate.now());
         pledgePayment.setPaymentMethod("CASH");
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     @Test
@@ -150,11 +162,20 @@ class PledgeServiceTest {
 
     @Test
     void getAllPledges_Success() {
-        when(pledgeRepository.findAll()).thenReturn(Arrays.asList(pledge));
+        when(pledgeRepository.findByChurchId(1L)).thenReturn(Arrays.asList(pledge));
 
         List<PledgeDto> result = pledgeService.getAllPledges();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getPledgeType()).isEqualTo("BUILDING");
+    }
+
+    @Test
+    void getAllPledges_NoChurchContext_ThrowsBadRequest() {
+        TenantContext.clear();
+
+        assertThatThrownBy(() -> pledgeService.getAllPledges())
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("No church context set");
     }
 }

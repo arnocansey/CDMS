@@ -2,8 +2,11 @@ package com.cdms.service;
 
 import com.cdms.dto.*;
 import com.cdms.entity.*;
+import com.cdms.exception.BadRequestException;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.*;
+import com.cdms.security.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -35,22 +37,39 @@ class EventServiceTest {
 
     @BeforeEach
     void setUp() {
+        TenantContext.setChurchId(1L);
+
         event = new Event();
         event.setId(1L);
+        event.setChurchId(1L);
         event.setTitle("Sunday Service");
         event.setDescription("Weekly worship service");
         event.setEventDate(LocalDate.now().plusDays(7));
         event.setLocation("Main Sanctuary");
     }
 
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
+    }
+
     @Test
     void getAllEvents_Success() {
-        when(eventRepository.findAll()).thenReturn(Arrays.asList(event));
+        when(eventRepository.findByChurchId(1L)).thenReturn(Arrays.asList(event));
 
         List<EventDto> result = eventService.getAllEvents();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getTitle()).isEqualTo("Sunday Service");
+    }
+
+    @Test
+    void getAllEvents_NoChurchContext_ThrowsBadRequest() {
+        TenantContext.clear();
+
+        assertThatThrownBy(() -> eventService.getAllEvents())
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("No church context set");
     }
 
     @Test
@@ -114,7 +133,7 @@ class EventServiceTest {
 
     @Test
     void getUpcomingEvents_Success() {
-        when(eventRepository.findUpcomingEvents(LocalDate.now())).thenReturn(Arrays.asList(event));
+        when(eventRepository.findUpcomingEventsByChurchId(1L, LocalDate.now())).thenReturn(Arrays.asList(event));
 
         List<EventDto> result = eventService.getUpcomingEvents();
 

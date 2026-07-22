@@ -137,7 +137,7 @@ public class AuthService {
                         .collect(Collectors.toSet())
         );
 
-        String newAccessToken = tokenProvider.generateToken(userDetails);
+        String newAccessToken = tokenProvider.generateToken(userDetails, user.getChurchId());
         String newRefreshToken = tokenProvider.generateRefreshToken(userDetails);
 
         user.setRefreshToken(newRefreshToken);
@@ -175,9 +175,7 @@ public class AuthService {
     }
 
     public void resetPassword(String token, String newPassword) {
-        User user = userRepository.findAll().stream()
-                .filter(u -> token.equals(u.getPasswordResetToken()))
-                .findFirst()
+        User user = userRepository.findByPasswordResetToken(token)
                 .orElseThrow(() -> new BadRequestException("Invalid reset token"));
 
         user.setPassword(passwordEncoder.encode(newPassword));

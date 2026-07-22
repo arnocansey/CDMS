@@ -22,24 +22,14 @@ public class AnnouncementService {
     }
 
     public List<AnnouncementDto> getAllAnnouncements() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return announcementRepository.findAll().stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return announcementRepository.findByChurchId(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public List<AnnouncementDto> getActiveAnnouncements() {
-        Long churchId = TenantContext.getChurchId();
-        if (churchId == null) {
-            return announcementRepository.findActiveAnnouncements(LocalDate.now()).stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-        }
+        Long churchId = TenantContext.requireChurchId();
         return announcementRepository.findActiveAnnouncementsByChurchId(churchId, LocalDate.now()).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());

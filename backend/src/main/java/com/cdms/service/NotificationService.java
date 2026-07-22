@@ -2,8 +2,10 @@ package com.cdms.service;
 
 import com.cdms.dto.NotificationDto;
 import com.cdms.entity.Notification;
+import com.cdms.exception.BadRequestException;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.NotificationRepository;
+import com.cdms.security.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,15 +39,19 @@ public class NotificationService {
 
     @Transactional
     public NotificationDto createNotification(Long churchId, Long userId, String title, String message, String type) {
+        Long resolvedChurchId = churchId != null ? churchId : TenantContext.getChurchId();
+        if (resolvedChurchId == null) {
+            throw new BadRequestException("No church context set for notification");
+        }
         Notification notification = new Notification(userId, title, message, type);
-        notification.setChurchId(churchId != null ? churchId : 1L);
+        notification.setChurchId(resolvedChurchId);
         Notification savedNotification = notificationRepository.save(notification);
         return mapToDto(savedNotification);
     }
 
     @Transactional
     public NotificationDto createNotification(Long userId, String title, String message, String type) {
-        return createNotification(1L, userId, title, message, type);
+        return createNotification(TenantContext.getChurchId(), userId, title, message, type);
     }
 
     @Transactional
@@ -72,23 +78,19 @@ public class NotificationService {
     }
 
     public void notifyDigestReady(Long churchId, String type) {
-        List<Notification> existingDigestNotifications = notificationRepository.findAll().stream()
-                .filter(n -> n.getChurchId() != null && n.getChurchId().equals(churchId))
-                .filter(n -> "DIGEST".equals(n.getType()))
-                .filter(n -> n.getMessage() != null && n.getMessage().contains(type))
-                .collect(Collectors.toList());
-
-        if (!existingDigestNotifications.isEmpty()) {
+        if (churchId == null || type == null) {
             return;
         }
-
-        Notification notification = new Notification();
+        boolean alreadyNotified = notificationRepository.findByChurchIdAndType(churchId, "DIGEST").stream()
+                .anyMatch(n -> n.getMessage() != null && n.getMessage().contains(type));
+        if (alreadyNotified) {
+            return;
+        }
+        // Church-scoped system notice without a fake user id (user_id required by schema)
+        Notification notification = new Notification(0L, type + " Digest Ready",
+                "Your " + type.toLowerCase() + " digest has been generated and sent to subscribers.",
+                "DIGEST");
         notification.setChurchId(churchId);
-        notification.setUserId(1L);
-        notification.setTitle(type + " Digest Ready");
-        notification.setMessage("Your " + type.toLowerCase() + " digest has been generated and sent to subscribers.");
-        notification.setType("DIGEST");
-        notification.setRead(false);
         notificationRepository.save(notification);
     }
 

@@ -72,7 +72,7 @@ class NotificationServiceTest {
     void createNotification_Success() {
         when(notificationRepository.save(any(Notification.class))).thenReturn(notification);
 
-        NotificationDto result = notificationService.createNotification(1L, "New Announcement",
+        NotificationDto result = notificationService.createNotification(1L, 1L, "New Announcement",
                 "There is a new church announcement.", "ANNOUNCEMENT");
 
         assertThat(result).isNotNull();

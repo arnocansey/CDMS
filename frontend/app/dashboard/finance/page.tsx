@@ -54,7 +54,7 @@ export default function FinancePage() {
 
   const dateParams =
     startDate && endDate ? { startDate, endDate } : undefined;
-  const { data: financialData, isLoading: isDataLoading } = useFinancialData(dateParams);
+  const { data: financialData, isLoading: isDataLoading, isError: isFinanceError } = useFinancialData(dateParams);
   const { data: membersData } = useMembers({ size: 1000 });
   const members = membersData?.content ?? [];
 
@@ -103,6 +103,12 @@ export default function FinancePage() {
           </Button>
         </div>
       </div>
+
+      {isFinanceError && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Failed to load financial data. Please refresh and try again.
+        </div>
+      )}
 
       <div className="flex items-center gap-4">
         <div className="space-y-1">
