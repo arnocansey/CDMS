@@ -20,6 +20,8 @@
     <properties>
         <java.version>21</java.version>
         <jjwt.version>0.12.6</jjwt.version>
+        <!-- Newer Flyway for Neon PostgreSQL 17/18 compatibility -->
+        <flyway.version>10.22.0</flyway.version>
     </properties>
 
     <dependencies>
