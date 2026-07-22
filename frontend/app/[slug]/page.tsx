@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { siteImages } from "@/lib/site-images";
+import { BackgroundImage } from "@/components/layout/background-image";
 import {
   Church,
   MapPin,
@@ -142,17 +142,9 @@ export default function ChurchPublicPage() {
       <main className="flex-1">
         {/* Hero */}
         <section className="relative overflow-hidden py-20 sm:py-24">
-          <Image
-            src={siteImages.interior}
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-            aria-hidden
-          />
+          <BackgroundImage src={siteImages.interior} priority />
           <div
-            className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-slate-950/65 to-slate-950/80"
+            className="absolute inset-0 z-[1] bg-gradient-to-b from-slate-950/65 via-slate-950/55 to-slate-950/70"
             aria-hidden
           />
           {primary && (

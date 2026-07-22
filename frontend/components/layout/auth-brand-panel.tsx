@@ -1,5 +1,5 @@
-import Image from "next/image";
 import type { ReactNode } from "react";
+import { BackgroundImage } from "@/components/layout/background-image";
 
 interface AuthBrandPanelProps {
   imageSrc: string;
@@ -15,16 +15,9 @@ export function AuthBrandPanel({
 }: AuthBrandPanelProps) {
   return (
     <div className="relative hidden w-1/2 items-center justify-center overflow-hidden lg:flex">
-      <Image
-        src={imageSrc}
-        alt={imageAlt}
-        fill
-        priority
-        sizes="50vw"
-        className="object-cover"
-      />
+      <BackgroundImage src={imageSrc} alt={imageAlt} priority />
       <div
-        className="absolute inset-0 bg-gradient-to-br from-slate-950/85 via-primary/75 to-slate-900/80"
+        className="absolute inset-0 z-[1] bg-gradient-to-br from-slate-950/80 via-primary/70 to-slate-900/75"
         aria-hidden
       />
       <div className="relative z-10 max-w-md px-8 text-center text-white">

@@ -7,6 +7,7 @@ import { branding } from "@/lib/branding";
 import { siteImages } from "@/lib/site-images";
 import { LandingNavbar } from "@/components/layout/landing-navbar";
 import { LandingFooter } from "@/components/layout/landing-footer";
+import { BackgroundImage } from "@/components/layout/background-image";
 import { Button } from "@/components/ui/button";
 import {
   Users,
@@ -111,16 +112,14 @@ export default function LandingPage() {
       <main className="flex-1">
         {/* Hero — full-bleed church photography (pulls under sticky nav) */}
         <section className="relative -mt-16 flex min-h-[100svh] items-center overflow-hidden pt-16">
-          <Image
+          <BackgroundImage
             src={siteImages.hero}
             alt="Church sanctuary aisle"
-            fill
             priority
-            sizes="100vw"
-            className="object-cover animate-ken-burns"
+            imgClassName="animate-ken-burns"
           />
           <div
-            className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/55 to-slate-950/80"
+            className="absolute inset-0 z-[1] bg-gradient-to-b from-slate-950/55 via-slate-950/45 to-slate-950/70"
             aria-hidden
           />
           <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
@@ -138,7 +137,7 @@ export default function LandingPage() {
                   {branding.shortName}
                 </h1>
               </div>
-              <p className="text-lg leading-relaxed text-white/85 sm:text-xl animate-fade-up-delay">
+              <p className="text-lg leading-relaxed text-white/90 sm:text-xl animate-fade-up-delay">
                 {branding.tagline}
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-up-delay-2">
@@ -205,15 +204,11 @@ export default function LandingPage() {
 
         {/* How It Works */}
         <section id="how-it-works" className="relative overflow-hidden border-t py-24">
-          <Image
+          <BackgroundImage
             src={siteImages.stainedGlass}
-            alt=""
-            fill
-            sizes="100vw"
-            className="object-cover opacity-[0.12] dark:opacity-[0.18]"
-            aria-hidden
+            imgClassName="opacity-25 dark:opacity-30"
           />
-          <div className="absolute inset-0 bg-muted/60 dark:bg-muted/40" aria-hidden />
+          <div className="absolute inset-0 z-[1] bg-background/70 dark:bg-background/60" aria-hidden />
           <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -279,15 +274,12 @@ export default function LandingPage() {
 
         {/* CTA */}
         <section className="relative overflow-hidden border-t py-24">
-          <Image
+          <BackgroundImage
             src={siteImages.congregation}
             alt="People gathering in community"
-            fill
-            sizes="100vw"
-            className="object-cover"
           />
           <div
-            className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/75 to-slate-950/70"
+            className="absolute inset-0 z-[1] bg-gradient-to-r from-slate-950/75 via-slate-950/65 to-slate-950/60"
             aria-hidden
           />
           <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -295,7 +287,7 @@ export default function LandingPage() {
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 Ready to Transform Your Church?
               </h2>
-              <p className="mt-4 text-lg text-white/80">
+              <p className="mt-4 text-lg text-white/85">
                 Join churches already using CDMS to strengthen their communities.
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -314,7 +306,7 @@ export default function LandingPage() {
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
-                    <div className="flex items-center gap-2 text-sm text-white/75">
+                    <div className="flex items-center gap-2 text-sm text-white/80">
                       <CheckCircle2 className="h-4 w-4 text-white" />
                       No credit card required
                     </div>
