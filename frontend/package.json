@@ -19,7 +19,9 @@
     "test:watch": "jest --config jest.config.js --watch"
   },
   "dependencies": {
+    "@cdms/shared": "file:../packages/shared",
     "@hookform/resolvers": "^3.9.0",
+
     "@paystack/inline-js": "^2.22.9",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.1",

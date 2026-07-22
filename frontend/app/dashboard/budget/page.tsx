@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useBudgets, useBudgetSummary } from "@/hooks/use-queries";
 import api from "@/lib/api";
 import { budgetSchema, type BudgetFormData } from "@/lib/validations";
+import { QueryError } from "@/components/query-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,8 +54,9 @@ export default function BudgetPage() {
   const [editingBudget, setEditingBudget] = useState<any>(null);
   const [selectedPeriod, setSelectedPeriod] = useState("2026");
 
-  const { data: budgets = [], isLoading: isBudgetsLoading } = useBudgets(selectedPeriod);
-  const { data: summary = {} } = useBudgetSummary(selectedPeriod);
+  const { data: budgets = [], isLoading: isBudgetsLoading, isError: isBudgetsError } = useBudgets(selectedPeriod);
+  const { data: summary = {}, isError: isSummaryError } = useBudgetSummary(selectedPeriod);
+  const isError = isBudgetsError || isSummaryError;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -122,6 +124,8 @@ export default function BudgetPage() {
           </Button>
         </div>
       </div>
+
+      {isError && <QueryError />}
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="glass">

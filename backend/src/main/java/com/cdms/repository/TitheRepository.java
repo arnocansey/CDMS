@@ -1,6 +1,8 @@
 package com.cdms.repository;
 
 import com.cdms.entity.Tithe;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +16,7 @@ public interface TitheRepository extends JpaRepository<Tithe, Long> {
     List<Tithe> findByChurchId(Long churchId);
     List<Tithe> findByTitheDateBetween(LocalDate startDate, LocalDate endDate);
     List<Tithe> findByChurchIdAndTitheDateBetween(Long churchId, LocalDate startDate, LocalDate endDate);
+    Page<Tithe> findByChurchIdAndTitheDateBetween(Long churchId, LocalDate startDate, LocalDate endDate, Pageable pageable);
     
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Tithe t WHERE t.titheDate BETWEEN :startDate AND :endDate")
     BigDecimal sumByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);

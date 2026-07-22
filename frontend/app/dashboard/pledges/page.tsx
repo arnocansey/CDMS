@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
 import { usePledges, usePledgeSummary, useMembers } from "@/hooks/use-queries";
 import api from "@/lib/api";
+import { QueryError } from "@/components/query-error";
 import {
   pledgeSchema,
   pledgePaymentSchema,
@@ -51,9 +52,10 @@ export default function PledgesPage() {
   const [editingPledge, setEditingPledge] = useState<any>(null);
   const [selectedPledge, setSelectedPledge] = useState<any>(null);
 
-  const { data: pledges = [], isLoading: isPledgesLoading, refetch } = usePledges();
-  const { data: summary } = usePledgeSummary();
-  const { data: membersData } = useMembers({ size: 1000 });
+  const { data: pledges = [], isLoading: isPledgesLoading, isError: isPledgesError, refetch } = usePledges();
+  const { data: summary, isError: isSummaryError } = usePledgeSummary();
+  const { data: membersData, isError: isMembersError } = useMembers({ size: 1000 });
+  const isError = isPledgesError || isSummaryError || isMembersError;
   const members = membersData?.content ?? [];
 
   useEffect(() => {
@@ -118,6 +120,8 @@ export default function PledgesPage() {
           Add Pledge
         </Button>
       </div>
+
+      {isError && <QueryError />}
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="glass">

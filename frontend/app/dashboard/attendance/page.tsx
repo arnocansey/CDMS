@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useAttendance, useRecordAttendance, useMembers } from "@/hooks/use-queries";
+import { QueryError } from "@/components/query-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,8 +40,9 @@ export default function AttendancePage() {
   const [serviceType, setServiceType] = useState("SUNDAY_SERVICE");
   const [present, setPresent] = useState(true);
 
-  const { data: attendance = [], isLoading: isFetching } = useAttendance(selectedDate);
-  const { data: membersData } = useMembers({ page: 0, size: 200 });
+  const { data: attendance = [], isLoading: isFetching, isError: isAttendanceError } = useAttendance(selectedDate);
+  const { data: membersData, isError: isMembersError } = useMembers({ page: 0, size: 200 });
+  const isError = isAttendanceError || isMembersError;
   const recordMutation = useRecordAttendance();
 
   const membersList = membersData?.content || membersData || [];
@@ -229,6 +231,8 @@ export default function AttendancePage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {isError && <QueryError />}
 
       <div className="flex items-center gap-4">
         <Input

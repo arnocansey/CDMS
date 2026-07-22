@@ -130,6 +130,13 @@ describe("fetchUsers", () => {
 })
 
 describe("fetchFinancialData", () => {
+  const emptyMeta = {
+    content: [],
+    totalPages: 0,
+    totalElements: 0,
+    number: 0,
+  }
+
   it("calls Promise.all with 4 api calls", async () => {
     mockedApi.get.mockResolvedValue({ data: [] })
     await fetchFinancialData()
@@ -140,7 +147,7 @@ describe("fetchFinancialData", () => {
     expect(mockedApi.get).toHaveBeenCalledWith("/finance/expenses", { params: {} })
   })
 
-  it("returns donations, tithes, offerings, and expenses", async () => {
+  it("returns donations, tithes, offerings, expenses, and meta", async () => {
     mockedApi.get
       .mockResolvedValueOnce({ data: [{ id: 1, amount: 100 }] })
       .mockResolvedValueOnce({ data: [{ id: 2, amount: 50 }] })
@@ -152,13 +159,38 @@ describe("fetchFinancialData", () => {
       tithes: [{ id: 2, amount: 50 }],
       offerings: [{ id: 3, amount: 75 }],
       expenses: [{ id: 4, amount: 200 }],
+      meta: {
+        donations: { content: [{ id: 1, amount: 100 }], totalPages: 1, totalElements: 1, number: 0 },
+        tithes: { content: [{ id: 2, amount: 50 }], totalPages: 1, totalElements: 1, number: 0 },
+        offerings: { content: [{ id: 3, amount: 75 }], totalPages: 1, totalElements: 1, number: 0 },
+        expenses: { content: [{ id: 4, amount: 200 }], totalPages: 1, totalElements: 1, number: 0 },
+      },
+    })
+  })
+
+  it("unwraps Spring Page responses", async () => {
+    mockedApi.get.mockResolvedValue({
+      data: { content: [{ id: 1 }], totalPages: 3, totalElements: 45, number: 1 },
+    })
+    const result = await fetchFinancialData({ page: 1, size: 20 })
+    expect(result.donations).toEqual([{ id: 1 }])
+    expect(result.meta.donations).toEqual({
+      content: [{ id: 1 }],
+      totalPages: 3,
+      totalElements: 45,
+      number: 1,
+    })
+    expect(mockedApi.get).toHaveBeenCalledWith("/finance/donations", {
+      params: { page: 1, size: 20 },
     })
   })
 
   it("passes date params when provided", async () => {
     mockedApi.get.mockResolvedValue({ data: [] })
     await fetchFinancialData({ startDate: "2026-01-01", endDate: "2026-12-31" })
-    expect(mockedApi.get).toHaveBeenCalledWith("/finance/donations", { params: { startDate: "2026-01-01", endDate: "2026-12-31" } })
+    expect(mockedApi.get).toHaveBeenCalledWith("/finance/donations", {
+      params: { startDate: "2026-01-01", endDate: "2026-12-31" },
+    })
   })
 
   it("defaults to empty array when data is null", async () => {
@@ -173,6 +205,12 @@ describe("fetchFinancialData", () => {
       tithes: [],
       offerings: [],
       expenses: [],
+      meta: {
+        donations: emptyMeta,
+        tithes: emptyMeta,
+        offerings: emptyMeta,
+        expenses: emptyMeta,
+      },
     })
   })
 })

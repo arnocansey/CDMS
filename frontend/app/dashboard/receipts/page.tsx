@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useReceipts } from "@/hooks/use-queries";
 import api from "@/lib/api";
+import { QueryError } from "@/components/query-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,7 +46,7 @@ export default function ReceiptsPage() {
 
   const dateParams =
     startDate && endDate ? { startDate, endDate } : undefined;
-  const { data: receiptsData, isLoading: isDataLoading } = useReceipts(dateParams);
+  const { data: receiptsData, isLoading: isDataLoading, isError } = useReceipts(dateParams);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -93,6 +94,8 @@ export default function ReceiptsPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Receipts</h2>
       </div>
+
+      {isError && <QueryError />}
 
       <div className="flex items-center gap-4">
         <div className="space-y-1">

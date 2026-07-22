@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useFinancialGoals, useGoalSummary, useMembers } from "@/hooks/use-queries";
 import api from "@/lib/api";
+import { QueryError } from "@/components/query-error";
 import {
   financialGoalSchema,
   goalContributionSchema,
@@ -52,9 +53,10 @@ export default function GoalsPage() {
   const [editingGoal, setEditingGoal] = useState<any>(null);
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
 
-  const { data: goals = [], isLoading: isGoalsLoading, refetch } = useFinancialGoals();
-  const { data: summary } = useGoalSummary();
-  const { data: membersData } = useMembers({ size: 1000 });
+  const { data: goals = [], isLoading: isGoalsLoading, isError: isGoalsError, refetch } = useFinancialGoals();
+  const { data: summary, isError: isSummaryError } = useGoalSummary();
+  const { data: membersData, isError: isMembersError } = useMembers({ size: 1000 });
+  const isError = isGoalsError || isSummaryError || isMembersError;
   const members = membersData?.content ?? [];
 
   useEffect(() => {
@@ -119,6 +121,8 @@ export default function GoalsPage() {
           Add Goal
         </Button>
       </div>
+
+      {isError && <QueryError />}
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="glass">

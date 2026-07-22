@@ -97,7 +97,7 @@ jobs:
         run: pnpm run build
 
   mobile-test:
-    name: Mobile Lint
+    name: Mobile Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -114,6 +114,9 @@ jobs:
       - name: Typecheck
         working-directory: ./mobile
         run: npx tsc --noEmit || true
+      - name: Run tests
+        working-directory: ./mobile
+        run: npm test
 
   docker-build:
     name: Build Docker Images

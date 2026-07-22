@@ -2,23 +2,28 @@ package com.cdms.service;
 
 import com.cdms.dto.*;
 import com.cdms.entity.*;
-import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.*;
+import com.cdms.security.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,9 +64,13 @@ class FinancialServiceTest {
     private Offering offering;
     private Expense expense;
     private Member member;
+    private Pageable pageable;
 
     @BeforeEach
     void setUp() {
+        TenantContext.setChurchId(1L);
+        pageable = PageRequest.of(0, 20);
+
         member = new Member();
         member.setId(1L);
         member.setFirstName("John");
@@ -93,14 +102,22 @@ class FinancialServiceTest {
         expense.setExpenseDate(LocalDate.now());
     }
 
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
+    }
+
     @Test
     void getDonations_Success() {
-        when(donationRepository.findByDonationDateBetween(any(), any())).thenReturn(Arrays.asList(donation));
+        LocalDate start = LocalDate.now().minusDays(30);
+        LocalDate end = LocalDate.now();
+        when(donationRepository.findByChurchIdAndDonationDateBetween(eq(1L), eq(start), eq(end), eq(pageable)))
+                .thenReturn(new PageImpl<>(Arrays.asList(donation)));
 
-        List<DonationDto> result = financialService.getDonations(LocalDate.now().minusDays(30), LocalDate.now());
+        Page<DonationDto> result = financialService.getDonations(start, end, pageable);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getAmount()).isEqualByComparingTo(BigDecimal.valueOf(100));
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getAmount()).isEqualByComparingTo(BigDecimal.valueOf(100));
     }
 
     @Test
@@ -143,11 +160,14 @@ class FinancialServiceTest {
 
     @Test
     void getOfferings_Success() {
-        when(offeringRepository.findByServiceDateBetween(any(), any())).thenReturn(Arrays.asList(offering));
+        LocalDate start = LocalDate.now().minusDays(30);
+        LocalDate end = LocalDate.now();
+        when(offeringRepository.findByChurchIdAndServiceDateBetween(eq(1L), eq(start), eq(end), eq(pageable)))
+                .thenReturn(new PageImpl<>(Arrays.asList(offering)));
 
-        List<OfferingDto> result = financialService.getOfferings(LocalDate.now().minusDays(30), LocalDate.now());
+        Page<OfferingDto> result = financialService.getOfferings(start, end, pageable);
 
-        assertThat(result).hasSize(1);
+        assertThat(result.getContent()).hasSize(1);
     }
 
     @Test
@@ -169,11 +189,14 @@ class FinancialServiceTest {
 
     @Test
     void getExpenses_Success() {
-        when(expenseRepository.findByExpenseDateBetween(any(), any())).thenReturn(Arrays.asList(expense));
+        LocalDate start = LocalDate.now().minusDays(30);
+        LocalDate end = LocalDate.now();
+        when(expenseRepository.findByChurchIdAndExpenseDateBetween(eq(1L), eq(start), eq(end), eq(pageable)))
+                .thenReturn(new PageImpl<>(Arrays.asList(expense)));
 
-        List<ExpenseDto> result = financialService.getExpenses(LocalDate.now().minusDays(30), LocalDate.now());
+        Page<ExpenseDto> result = financialService.getExpenses(start, end, pageable);
 
-        assertThat(result).hasSize(1);
+        assertThat(result.getContent()).hasSize(1);
     }
 
     @Test

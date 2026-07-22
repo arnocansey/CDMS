@@ -133,10 +133,32 @@ export function useUsers() {
   })
 }
 
-export function useFinancialData(params?: { startDate?: string; endDate?: string }) {
+export function useFinancialData(params?: {
+  startDate?: string
+  endDate?: string
+  page?: number
+  size?: number
+  pages?: {
+    donations?: number
+    tithes?: number
+    offerings?: number
+    expenses?: number
+  }
+}) {
   return useQuery({
     queryKey: ["financial-data", params],
     queryFn: () => fetchFinancialData(params),
+    staleTime: 2 * 60 * 1000,
+  })
+}
+
+export function useFinanceSummary() {
+  return useQuery({
+    queryKey: ["finance-summary"],
+    queryFn: async () => {
+      const { data } = await api.get("/finance/summary")
+      return data
+    },
     staleTime: 2 * 60 * 1000,
   })
 }

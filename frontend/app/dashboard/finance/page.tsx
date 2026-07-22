@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
-import { useFinancialData, useMembers, useBranches } from "@/hooks/use-queries";
+import { useFinancialData, useFinanceSummary, useMembers, useBranches } from "@/hooks/use-queries";
 import api from "@/lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
@@ -43,18 +43,72 @@ import { DollarSign, TrendingDown, Wallet, Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 
 type TransactionTab = "donation" | "tithe" | "offering" | "expense";
+type ListTab = "donations" | "tithes" | "offerings" | "expenses";
+
+const PAGE_SIZE = 20;
+
+function FinancePagination({
+  page,
+  totalPages,
+  totalElements,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  totalElements: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between border-t px-4 py-3">
+      <p className="text-sm text-muted-foreground">
+        Page {page + 1} of {totalPages} ({totalElements} total)
+      </p>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={page <= 0}
+          onClick={() => onPageChange(page - 1)}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={page >= totalPages - 1}
+          onClick={() => onPageChange(page + 1)}
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function FinancePage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TransactionTab>("donation");
+  const [listTab, setListTab] = useState<ListTab>("donations");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [pages, setPages] = useState({
+    donations: 0,
+    tithes: 0,
+    offerings: 0,
+    expenses: 0,
+  });
 
   const dateParams =
     startDate && endDate ? { startDate, endDate } : undefined;
-  const { data: financialData, isLoading: isDataLoading, isError: isFinanceError } = useFinancialData(dateParams);
+  const { data: financialData, isLoading: isDataLoading, isError: isFinanceError } = useFinancialData({
+    ...dateParams,
+    size: PAGE_SIZE,
+    pages,
+  });
+  const { data: financeSummary } = useFinanceSummary();
   const { data: membersData } = useMembers({ size: 1000 });
   const members = membersData?.content ?? [];
 
@@ -64,17 +118,23 @@ export default function FinancePage() {
     }
   }, [isAuthenticated, isLoading, router]);
 
+  useEffect(() => {
+    setPages({ donations: 0, tithes: 0, offerings: 0, expenses: 0 });
+  }, [startDate, endDate]);
+
   const donations = financialData?.donations ?? [];
   const tithes = financialData?.tithes ?? [];
   const offerings = financialData?.offerings ?? [];
   const expenses = financialData?.expenses ?? [];
+  const meta = financialData?.meta;
 
-  const totalIncome =
-    donations.reduce((s: number, d: any) => s + (d.amount || 0), 0) +
-    tithes.reduce((s: number, t: any) => s + (t.amount || 0), 0) +
-    offerings.reduce((s: number, o: any) => s + (o.amount || 0), 0);
-  const totalExpenses = expenses.reduce((s: number, e: any) => s + (e.amount || 0), 0);
-  const netBalance = totalIncome - totalExpenses;
+  const totalIncome = Number(financeSummary?.totalDonations ?? 0);
+  const totalExpenses = Number(financeSummary?.totalExpenses ?? 0);
+  const netBalance = Number(financeSummary?.netBalance ?? totalIncome - totalExpenses);
+
+  const setPageFor = (tab: ListTab, page: number) => {
+    setPages((prev) => ({ ...prev, [tab]: page }));
+  };
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -143,13 +203,14 @@ export default function FinancePage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="glass">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
             <DollarSign className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
               ${totalIncome.toLocaleString()}
             </div>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
         <Card className="glass">
@@ -161,6 +222,7 @@ export default function FinancePage() {
             <div className="text-2xl font-bold text-red-600">
               ${totalExpenses.toLocaleString()}
             </div>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
         <Card className="glass">
@@ -172,16 +234,28 @@ export default function FinancePage() {
             <div className={`text-2xl font-bold ${netBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
               ${netBalance.toLocaleString()}
             </div>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="donations" onValueChange={(v) => setActiveTab(v as TransactionTab)}>
+      <Tabs
+        value={listTab}
+        onValueChange={(v) => setListTab(v as ListTab)}
+      >
         <TabsList>
-          <TabsTrigger value="donations">Donations ({donations.length})</TabsTrigger>
-          <TabsTrigger value="tithes">Tithes ({tithes.length})</TabsTrigger>
-          <TabsTrigger value="offerings">Offerings ({offerings.length})</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses ({expenses.length})</TabsTrigger>
+          <TabsTrigger value="donations">
+            Donations ({meta?.donations?.totalElements ?? donations.length})
+          </TabsTrigger>
+          <TabsTrigger value="tithes">
+            Tithes ({meta?.tithes?.totalElements ?? tithes.length})
+          </TabsTrigger>
+          <TabsTrigger value="offerings">
+            Offerings ({meta?.offerings?.totalElements ?? offerings.length})
+          </TabsTrigger>
+          <TabsTrigger value="expenses">
+            Expenses ({meta?.expenses?.totalElements ?? expenses.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="donations">
@@ -209,11 +283,17 @@ export default function FinancePage() {
                       </tr>
                     ))}
                     {donations.length === 0 && (
-                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No donations found</td></tr>
+                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">{isDataLoading ? "Loading..." : "No donations found"}</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
+              <FinancePagination
+                page={pages.donations}
+                totalPages={meta?.donations?.totalPages ?? 0}
+                totalElements={meta?.donations?.totalElements ?? 0}
+                onPageChange={(page) => setPageFor("donations", page)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -241,11 +321,17 @@ export default function FinancePage() {
                       </tr>
                     ))}
                     {tithes.length === 0 && (
-                      <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No tithes found</td></tr>
+                      <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">{isDataLoading ? "Loading..." : "No tithes found"}</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
+              <FinancePagination
+                page={pages.tithes}
+                totalPages={meta?.tithes?.totalPages ?? 0}
+                totalElements={meta?.tithes?.totalElements ?? 0}
+                onPageChange={(page) => setPageFor("tithes", page)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -273,11 +359,17 @@ export default function FinancePage() {
                       </tr>
                     ))}
                     {offerings.length === 0 && (
-                      <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No offerings found</td></tr>
+                      <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">{isDataLoading ? "Loading..." : "No offerings found"}</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
+              <FinancePagination
+                page={pages.offerings}
+                totalPages={meta?.offerings?.totalPages ?? 0}
+                totalElements={meta?.offerings?.totalElements ?? 0}
+                onPageChange={(page) => setPageFor("offerings", page)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -307,11 +399,17 @@ export default function FinancePage() {
                       </tr>
                     ))}
                     {expenses.length === 0 && (
-                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No expenses found</td></tr>
+                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">{isDataLoading ? "Loading..." : "No expenses found"}</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
+              <FinancePagination
+                page={pages.expenses}
+                totalPages={meta?.expenses?.totalPages ?? 0}
+                totalElements={meta?.expenses?.totalElements ?? 0}
+                onPageChange={(page) => setPageFor("expenses", page)}
+              />
             </CardContent>
           </Card>
         </TabsContent>

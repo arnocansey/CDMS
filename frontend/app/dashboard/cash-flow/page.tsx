@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCashFlowStatement, useCashFlowEntries } from "@/hooks/use-queries";
 import api from "@/lib/api";
 import { cashFlowEntrySchema, type CashFlowEntryFormData } from "@/lib/validations";
+import { QueryError } from "@/components/query-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,13 +78,14 @@ export default function CashFlowPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const hasDateRange = !!startDate && !!endDate;
-  const { data: statement, isLoading: isStatementLoading } = useCashFlowStatement(
+  const { data: statement, isLoading: isStatementLoading, isError: isStatementError } = useCashFlowStatement(
     startDate,
     endDate
   );
-  const { data: entriesData, isLoading: isEntriesLoading } = useCashFlowEntries(
+  const { data: entriesData, isLoading: isEntriesLoading, isError: isEntriesError } = useCashFlowEntries(
     hasDateRange ? { startDate, endDate } : undefined
   );
+  const isError = isStatementError || isEntriesError;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -144,6 +146,8 @@ export default function CashFlowPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Cash Flow</h2>
       </div>
+
+      {isError && <QueryError />}
 
       <div className="flex items-center gap-4 flex-wrap">
         <div className="space-y-1">

@@ -4,6 +4,8 @@ import com.cdms.dto.*;
 import com.cdms.entity.*;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -51,10 +53,10 @@ public class FinancialService {
         this.budgetRepository = budgetRepository;
     }
 
-    public List<DonationDto> getDonations(LocalDate startDate, LocalDate endDate) {
-        return donationRepository.findByDonationDateBetween(startDate, endDate).stream()
-                .map(this::mapDonationToDto)
-                .collect(Collectors.toList());
+    public Page<DonationDto> getDonations(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        Long churchId = TenantContext.requireChurchId();
+        return donationRepository.findByChurchIdAndDonationDateBetween(churchId, startDate, endDate, pageable)
+                .map(this::mapDonationToDto);
     }
 
     @Transactional
@@ -90,10 +92,10 @@ public class FinancialService {
         return mapDonationToDto(savedDonation);
     }
 
-    public List<TitheDto> getTithes(LocalDate startDate, LocalDate endDate) {
-        return titheRepository.findByTitheDateBetween(startDate, endDate).stream()
-                .map(this::mapTitheToDto)
-                .collect(Collectors.toList());
+    public Page<TitheDto> getTithes(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        Long churchId = TenantContext.requireChurchId();
+        return titheRepository.findByChurchIdAndTitheDateBetween(churchId, startDate, endDate, pageable)
+                .map(this::mapTitheToDto);
     }
 
     @Transactional
@@ -125,10 +127,10 @@ public class FinancialService {
         return mapTitheToDto(savedTithe);
     }
 
-    public List<OfferingDto> getOfferings(LocalDate startDate, LocalDate endDate) {
-        return offeringRepository.findByServiceDateBetween(startDate, endDate).stream()
-                .map(this::mapOfferingToDto)
-                .collect(Collectors.toList());
+    public Page<OfferingDto> getOfferings(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        Long churchId = TenantContext.requireChurchId();
+        return offeringRepository.findByChurchIdAndServiceDateBetween(churchId, startDate, endDate, pageable)
+                .map(this::mapOfferingToDto);
     }
 
     @Transactional
@@ -158,10 +160,10 @@ public class FinancialService {
         return mapOfferingToDto(savedOffering);
     }
 
-    public List<ExpenseDto> getExpenses(LocalDate startDate, LocalDate endDate) {
-        return expenseRepository.findByExpenseDateBetween(startDate, endDate).stream()
-                .map(this::mapExpenseToDto)
-                .collect(Collectors.toList());
+    public Page<ExpenseDto> getExpenses(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        Long churchId = TenantContext.requireChurchId();
+        return expenseRepository.findByChurchIdAndExpenseDateBetween(churchId, startDate, endDate, pageable)
+                .map(this::mapExpenseToDto);
     }
 
     @Transactional

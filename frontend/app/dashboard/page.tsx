@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useDashboardStats, useFinancialData, useFinancialHealth, useFundSummary, useFinancialGoals } from "@/hooks/use-queries";
 import { fetchFinancialData } from "@/lib/api-functions";
+import { QueryError } from "@/components/query-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users, Calendar, DollarSign, TrendingUp, TrendingDown,
@@ -34,11 +35,12 @@ const PIE_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4
 export default function DashboardPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const { data: dashboardData, isLoading: isDashboardLoading } = useDashboardStats();
-  const { data: financialData } = useFinancialData();
-  const { data: healthData } = useFinancialHealth();
-  const { data: fundSummary } = useFundSummary();
-  const { data: goalsData } = useFinancialGoals();
+  const { data: dashboardData, isLoading: isDashboardLoading, isError: isDashboardError } = useDashboardStats();
+  const { data: financialData, isError: isFinancialError } = useFinancialData({ size: 1000 });
+  const { data: healthData, isError: isHealthError } = useFinancialHealth();
+  const { data: fundSummary, isError: isFundError } = useFundSummary();
+  const { data: goalsData, isError: isGoalsError } = useFinancialGoals();
+  const isError = isDashboardError || isFinancialError || isHealthError || isFundError || isGoalsError;
   const [recentContributions, setRecentContributions] = useState<any[]>([]);
   const [recentExpenses, setRecentExpenses] = useState<any[]>([]);
 
@@ -188,6 +190,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4 p-4 md:space-y-6 md:p-6">
       <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Dashboard</h2>
+
+      {isError && <QueryError />}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="glass">

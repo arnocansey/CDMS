@@ -8,6 +8,7 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import api from "@/lib/api";
 import { useUsers } from "@/hooks/use-queries";
+import { QueryError } from "@/components/query-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,7 +56,7 @@ export default function UsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const { data: users = [], refetch } = useUsers();
+  const { data: users = [], refetch, isError } = useUsers();
 
   const {
     register,
@@ -167,6 +168,8 @@ export default function UsersPage() {
           Add User
         </Button>
       </div>
+
+      {isError && <QueryError />}
 
       <Card>
         <CardHeader>

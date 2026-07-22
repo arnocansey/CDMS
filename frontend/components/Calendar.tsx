@@ -13,6 +13,7 @@ export interface CalendarEvent {
   endTime?: string;
   type: "SERVICE" | "MEETING" | "SOCIAL" | "SPECIAL";
   description?: string;
+  location?: string;
 }
 
 interface CalendarProps {

@@ -14,12 +14,31 @@ jest.mock("next/navigation", () => ({
 
 jest.mock("@/hooks/use-queries", () => ({
   useFinancialData: jest.fn().mockReturnValue({
-    data: { donations: [], tithes: [], offerings: [], expenses: [] },
+    data: {
+      donations: [],
+      tithes: [],
+      offerings: [],
+      expenses: [],
+      meta: {
+        donations: { content: [], totalPages: 0, totalElements: 0, number: 0 },
+        tithes: { content: [], totalPages: 0, totalElements: 0, number: 0 },
+        offerings: { content: [], totalPages: 0, totalElements: 0, number: 0 },
+        expenses: { content: [], totalPages: 0, totalElements: 0, number: 0 },
+      },
+    },
     isLoading: false,
     isError: false,
   }),
+  useFinanceSummary: jest.fn().mockReturnValue({
+    data: { totalDonations: 0, totalExpenses: 0, netBalance: 0 },
+    isLoading: false,
+  }),
   useMembers: jest.fn().mockReturnValue({
     data: { content: [] },
+    isLoading: false,
+  }),
+  useBranches: jest.fn().mockReturnValue({
+    data: [],
     isLoading: false,
   }),
 }));

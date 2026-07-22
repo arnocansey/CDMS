@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useFinancialData, useBudgets, useMembers } from "@/hooks/use-queries";
+import { QueryError } from "@/components/query-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -28,9 +29,10 @@ export default function AnalyticsPage() {
   const router = useRouter();
   const [period, setPeriod] = useState("2026");
 
-  const { data: financialData } = useFinancialData();
-  const { data: budgets = [] } = useBudgets(period);
-  const { data: membersData } = useMembers({ size: 1000 });
+  const { data: financialData, isError: isFinancialError } = useFinancialData({ size: 1000 });
+  const { data: budgets = [], isError: isBudgetsError } = useBudgets(period);
+  const { data: membersData, isError: isMembersError } = useMembers({ size: 1000 });
+  const isError = isFinancialError || isBudgetsError || isMembersError;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -110,6 +112,8 @@ export default function AnalyticsPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {isError && <QueryError />}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="glass">

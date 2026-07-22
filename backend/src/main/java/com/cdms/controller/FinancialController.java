@@ -3,6 +3,9 @@ package com.cdms.controller;
 import com.cdms.dto.*;
 import com.cdms.service.FinancialService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,12 +27,13 @@ public class FinancialController {
 
     @GetMapping("/donations")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER')")
-    public ResponseEntity<List<DonationDto>> getDonations(
+    public ResponseEntity<Page<DonationDto>> getDonations(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @PageableDefault(size = 1000) Pageable pageable) {
         LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
-        List<DonationDto> donations = financialService.getDonations(start, end);
+        Page<DonationDto> donations = financialService.getDonations(start, end, pageable);
         return ResponseEntity.ok(donations);
     }
 
@@ -42,12 +46,13 @@ public class FinancialController {
 
     @GetMapping("/tithes")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER')")
-    public ResponseEntity<List<TitheDto>> getTithes(
+    public ResponseEntity<Page<TitheDto>> getTithes(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @PageableDefault(size = 1000) Pageable pageable) {
         LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
-        List<TitheDto> tithes = financialService.getTithes(start, end);
+        Page<TitheDto> tithes = financialService.getTithes(start, end, pageable);
         return ResponseEntity.ok(tithes);
     }
 
@@ -60,12 +65,13 @@ public class FinancialController {
 
     @GetMapping("/offerings")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER')")
-    public ResponseEntity<List<OfferingDto>> getOfferings(
+    public ResponseEntity<Page<OfferingDto>> getOfferings(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @PageableDefault(size = 1000) Pageable pageable) {
         LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
-        List<OfferingDto> offerings = financialService.getOfferings(start, end);
+        Page<OfferingDto> offerings = financialService.getOfferings(start, end, pageable);
         return ResponseEntity.ok(offerings);
     }
 
@@ -78,12 +84,13 @@ public class FinancialController {
 
     @GetMapping("/expenses")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'TREASURER')")
-    public ResponseEntity<List<ExpenseDto>> getExpenses(
+    public ResponseEntity<Page<ExpenseDto>> getExpenses(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @PageableDefault(size = 1000) Pageable pageable) {
         LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
-        List<ExpenseDto> expenses = financialService.getExpenses(start, end);
+        Page<ExpenseDto> expenses = financialService.getExpenses(start, end, pageable);
         return ResponseEntity.ok(expenses);
     }
 

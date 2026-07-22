@@ -1,6 +1,8 @@
 package com.cdms.repository;
 
 import com.cdms.entity.Donation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +16,7 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
     List<Donation> findByChurchId(Long churchId);
     List<Donation> findByDonationDateBetween(LocalDate startDate, LocalDate endDate);
     List<Donation> findByChurchIdAndDonationDateBetween(Long churchId, LocalDate startDate, LocalDate endDate);
+    Page<Donation> findByChurchIdAndDonationDateBetween(Long churchId, LocalDate startDate, LocalDate endDate, Pageable pageable);
     
     @Query("SELECT COALESCE(SUM(d.amount), 0) FROM Donation d WHERE d.donationDate BETWEEN :startDate AND :endDate")
     BigDecimal sumByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);

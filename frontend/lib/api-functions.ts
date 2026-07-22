@@ -67,19 +67,63 @@ export async function fetchUsers() {
   return response.data.content ?? response.data
 }
 
-export async function fetchFinancialData(params?: { startDate?: string; endDate?: string }) {
-  const dateParams = params?.startDate ? { startDate: params.startDate, endDate: params.endDate } : {}
-  const [donations, tithes, offerings, expenses] = await Promise.all([
-    api.get("/finance/donations", { params: dateParams }),
-    api.get("/finance/tithes", { params: dateParams }),
-    api.get("/finance/offerings", { params: dateParams }),
-    api.get("/finance/expenses", { params: dateParams }),
-  ])
+function unwrapPage(data: any) {
+  if (Array.isArray(data)) {
+    return { content: data, totalPages: 1, totalElements: data.length, number: 0 }
+  }
   return {
-    donations: donations.data || [],
-    tithes: tithes.data || [],
-    offerings: offerings.data || [],
-    expenses: expenses.data || [],
+    content: data?.content ?? [],
+    totalPages: data?.totalPages ?? 0,
+    totalElements: data?.totalElements ?? 0,
+    number: data?.number ?? 0,
+  }
+}
+
+export async function fetchFinancialData(params?: {
+  startDate?: string
+  endDate?: string
+  page?: number
+  size?: number
+  pages?: {
+    donations?: number
+    tithes?: number
+    offerings?: number
+    expenses?: number
+  }
+}) {
+  const buildParams = (pageOverride?: number) => {
+    const query: Record<string, string | number> = {}
+    if (params?.startDate) query.startDate = params.startDate
+    if (params?.endDate) query.endDate = params.endDate
+    const page = pageOverride ?? params?.page
+    if (page !== undefined) query.page = page
+    if (params?.size !== undefined) query.size = params.size
+    return query
+  }
+
+  const [donations, tithes, offerings, expenses] = await Promise.all([
+    api.get("/finance/donations", { params: buildParams(params?.pages?.donations) }),
+    api.get("/finance/tithes", { params: buildParams(params?.pages?.tithes) }),
+    api.get("/finance/offerings", { params: buildParams(params?.pages?.offerings) }),
+    api.get("/finance/expenses", { params: buildParams(params?.pages?.expenses) }),
+  ])
+
+  const donationsPage = unwrapPage(donations.data)
+  const tithesPage = unwrapPage(tithes.data)
+  const offeringsPage = unwrapPage(offerings.data)
+  const expensesPage = unwrapPage(expenses.data)
+
+  return {
+    donations: donationsPage.content,
+    tithes: tithesPage.content,
+    offerings: offeringsPage.content,
+    expenses: expensesPage.content,
+    meta: {
+      donations: donationsPage,
+      tithes: tithesPage,
+      offerings: offeringsPage,
+      expenses: expensesPage,
+    },
   }
 }
 

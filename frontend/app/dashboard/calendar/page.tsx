@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useEvents } from "@/hooks/use-queries";
 import api from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { QueryError } from "@/components/query-error";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,13 +20,6 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Calendar, CalendarEvent } from "@/components/Calendar";
 import { Plus } from "lucide-react";
 
@@ -31,7 +28,6 @@ interface EventFormData {
   date: string;
   startTime: string;
   endTime: string;
-  type: "SERVICE" | "MEETING" | "SOCIAL" | "SPECIAL";
   description: string;
 }
 
@@ -40,13 +36,33 @@ const defaultForm: EventFormData = {
   date: "",
   startTime: "",
   endTime: "",
-  type: "SERVICE",
   description: "",
 };
 
+const VALID_TYPES = new Set(["SERVICE", "MEETING", "SOCIAL", "SPECIAL"]);
+
+function toCalendarType(event: {
+  type?: string;
+  recurring?: boolean;
+}): CalendarEvent["type"] {
+  if (event.type && VALID_TYPES.has(event.type)) {
+    return event.type as CalendarEvent["type"];
+  }
+  return event.recurring ? "MEETING" : "SERVICE";
+}
+
+function toTimeInput(value?: string | null) {
+  if (!value) return "";
+  if (value.includes("T")) {
+    return value.split("T")[1]?.slice(0, 5) ?? "";
+  }
+  return value.slice(0, 5);
+}
+
 export default function CalendarPage() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const { data, isError } = useEvents();
   const [view, setView] = useState<"month" | "week" | "day">("month");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<EventFormData>(defaultForm);
@@ -54,27 +70,41 @@ export default function CalendarPage() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated) fetchEvents();
-  }, [isAuthenticated]);
+  const canWrite =
+    user?.roles?.includes("ADMIN") ||
+    user?.roles?.includes("PASTOR") ||
+    user?.roles?.includes("SECRETARY");
 
-  const fetchEvents = async () => {
-    try {
-      const res = await api.get("/events");
-      setEvents(res.data);
-    } catch {
-      setEvents([]);
-    }
-  };
+  const events: CalendarEvent[] = useMemo(() => {
+    const list = Array.isArray(data) ? data : data?.content ?? [];
+    return list.map((event: any) => ({
+      id: event.id,
+      title: event.title,
+      date: event.eventDate ?? event.date ?? "",
+      startTime: toTimeInput(event.startTime),
+      endTime: toTimeInput(event.endTime),
+      type: toCalendarType(event),
+      description: event.description,
+      location: event.location,
+    }));
+  }, [data]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await api.post("/events", form);
+      await api.post("/events", {
+        title: form.title,
+        description: form.description,
+        eventDate: form.date,
+        startTime: form.startTime || null,
+        endTime: form.endTime || null,
+        location: "",
+        recurring: false,
+      });
       setDialogOpen(false);
       setForm(defaultForm);
-      fetchEvents();
+      queryClient.invalidateQueries({ queryKey: ["events"] });
     } catch {
       // handled by interceptor
     } finally {
@@ -83,6 +113,7 @@ export default function CalendarPage() {
   };
 
   const handleDateClick = (date: Date) => {
+    if (!canWrite) return;
     setForm({
       ...defaultForm,
       date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
@@ -111,6 +142,9 @@ export default function CalendarPage() {
           <p className="text-muted-foreground">View and manage church events</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/dashboard/events">Manage events</Link>
+          </Button>
           <div className="flex rounded-md border">
             {(["month", "week", "day"] as const).map((v) => (
               <Button
@@ -124,28 +158,28 @@ export default function CalendarPage() {
               </Button>
             ))}
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Event
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Event</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+          {canWrite && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Event
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Event</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      value={form.title}
+                      onChange={(e) => setForm({ ...form, title: e.target.value })}
+                      required
+                    />
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="date">Date</Label>
                     <Input
@@ -156,66 +190,49 @@ export default function CalendarPage() {
                       required
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="startTime">Start Time</Label>
+                      <Input
+                        id="startTime"
+                        type="time"
+                        value={form.startTime}
+                        onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="endTime">End Time</Label>
+                      <Input
+                        id="endTime"
+                        type="time"
+                        value={form.endTime}
+                        onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    <Label htmlFor="type">Type</Label>
-                    <Select
-                      value={form.type}
-                      onValueChange={(v) =>
-                        setForm({ ...form, type: v as EventFormData["type"] })
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={form.description}
+                      onChange={(e) =>
+                        setForm({ ...form, description: e.target.value })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="SERVICE">Service</SelectItem>
-                        <SelectItem value="MEETING">Meeting</SelectItem>
-                        <SelectItem value="SOCIAL">Social</SelectItem>
-                        <SelectItem value="SPECIAL">Special</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startTime">Start Time</Label>
-                    <Input
-                      id="startTime"
-                      type="time"
-                      value={form.startTime}
-                      onChange={(e) => setForm({ ...form, startTime: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input
-                      id="endTime"
-                      type="time"
-                      value={form.endTime}
-                      onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={form.description}
-                    onChange={(e) =>
-                      setForm({ ...form, description: e.target.value })
-                    }
-                  />
-                </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={submitting}>
-                    {submitting ? "Creating..." : "Create Event"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter>
+                    <Button type="submit" disabled={submitting}>
+                      {submitting ? "Creating..." : "Create Event"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
+
+      {isError && <QueryError message="Failed to load events. Please try again." />}
 
       <Card>
         <CardContent className="p-4">
@@ -253,6 +270,12 @@ export default function CalendarPage() {
                     {selectedEvent.startTime}
                     {selectedEvent.endTime && ` - ${selectedEvent.endTime}`}
                   </p>
+                </div>
+              )}
+              {selectedEvent.location && (
+                <div>
+                  <span className="text-sm text-muted-foreground">Location</span>
+                  <p className="font-medium">{selectedEvent.location}</p>
                 </div>
               )}
               <div>
