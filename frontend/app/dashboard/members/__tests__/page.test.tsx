@@ -15,11 +15,15 @@ jest.mock("next/navigation", () => ({
 
 jest.mock("@/hooks/use-queries", () => ({
   useMembers: jest.fn().mockReturnValue({
-    data: { content: [], totalElements: 0 },
+    data: { content: [], totalElements: 0, totalPages: 0 },
     isLoading: false,
     isError: false,
   }),
   useDepartments: jest.fn().mockReturnValue({
+    data: [],
+    isLoading: false,
+  }),
+  useBranches: jest.fn().mockReturnValue({
     data: [],
     isLoading: false,
   }),
