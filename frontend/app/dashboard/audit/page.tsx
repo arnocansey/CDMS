@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Shield, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { StatusBadge } from "@/components/status-badge";
 
 interface AuditLogEntry {
   id: number;
@@ -50,12 +51,6 @@ const ENTITY_TYPES = [
   "PLEDGE",
   "USER",
 ];
-
-const ACTION_BADGES: Record<string, string> = {
-  CREATE: "bg-green-100 text-green-800",
-  UPDATE: "bg-yellow-100 text-yellow-800",
-  DELETE: "bg-red-100 text-red-800",
-};
 
 export default function AuditLogPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -212,11 +207,7 @@ export default function AuditLogPage() {
                       </td>
                       <td className="p-4">{log.userName || "System"}</td>
                       <td className="p-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${ACTION_BADGES[log.action] || "bg-gray-100 text-gray-800"}`}
-                        >
-                          {log.action}
-                        </span>
+                        <StatusBadge status={log.action || "update"} />
                       </td>
                       <td className="p-4">{log.entityType}</td>
                       <td className="p-4 text-muted-foreground">{log.entityId}</td>

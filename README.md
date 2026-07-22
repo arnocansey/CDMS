@@ -166,6 +166,7 @@ Core endpoints (see `docs/API_DOCUMENTATION.md` for the full surface — ~49 con
 - [User Manual](docs/USER_MANUAL.md)
 - [Administrator Manual](docs/ADMIN_MANUAL.md)
 - [Installation & Deployment Guide](docs/INSTALLATION_DEPLOYMENT_GUIDE.md)
+- [Production Checklist](docs/PRODUCTION_CHECKLIST.md) (Render + Vercel + Neon)
 
 ## Environment Variables
 

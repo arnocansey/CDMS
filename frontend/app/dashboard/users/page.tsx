@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, UserCog, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const userSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -55,6 +56,8 @@ export default function UsersPage() {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const { data: users = [], refetch, isError } = useUsers();
 
@@ -87,14 +90,22 @@ export default function UsersPage() {
     }
   }, [editingUser, reset]);
 
-  const deleteUser = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
+  const requestDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      await api.delete(`/users/${id}`);
+      await api.delete(`/users/${pendingDeleteId}`);
       toast.success("User deleted");
       refetch();
     } catch (error) {
       toast.error("Failed to delete user");
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -231,7 +242,7 @@ export default function UsersPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteUser(user.id)}
+                          onClick={() => requestDelete(user.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -340,6 +351,15 @@ export default function UsersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete user?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

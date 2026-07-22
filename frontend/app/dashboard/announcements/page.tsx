@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { PageSpinner } from "@/components/page-spinner";
 import { StatusBadge } from "@/components/status-badge";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface AnnouncementForm {
   title: string;
@@ -51,6 +52,8 @@ export default function AnnouncementsPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<AnnouncementForm>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const canWrite =
     user?.roles?.includes("ADMIN") || user?.roles?.includes("SECRETARY");
@@ -116,14 +119,22 @@ export default function AnnouncementsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this announcement?")) return;
+  const requestDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      await api.delete(`/announcements/${id}`);
+      await api.delete(`/announcements/${pendingDeleteId}`);
       toast.success("Announcement deleted");
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
     } catch {
       toast.error("Failed to delete announcement");
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -208,7 +219,7 @@ export default function AnnouncementsPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDelete(item.id)}
+                              onClick={() => requestDelete(item.id)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -318,6 +329,15 @@ export default function AnnouncementsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete announcement?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

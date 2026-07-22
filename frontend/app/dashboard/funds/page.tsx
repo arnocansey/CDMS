@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { Plus, Wallet, TrendingUp, TrendingDown, Edit, Trash2, DollarSign } from "lucide-react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export default function FundsPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,6 +28,8 @@ export default function FundsPage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFund, setEditingFund] = useState<any>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: "", description: "", fundType: "GENERAL", openingBalance: "0", targetAmount: "",
   });
@@ -90,14 +93,22 @@ export default function FundsPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this fund?")) return;
+  const requestDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      await api.delete(`/funds/${id}`);
+      await api.delete(`/funds/${pendingDeleteId}`);
       toast.success("Fund deleted");
       fetchData();
     } catch {
       toast.error("Failed to delete fund");
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -199,7 +210,7 @@ export default function FundsPage() {
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(fund)}>
                   <Edit className="mr-1 h-3 w-3" /> Edit
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDelete(fund.id)}>
+                <Button variant="outline" size="sm" onClick={() => requestDelete(fund.id)}>
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
@@ -262,6 +273,15 @@ export default function FundsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete fund?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

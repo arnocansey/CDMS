@@ -9,6 +9,7 @@ import { useCashFlowStatement, useCashFlowEntries } from "@/hooks/use-queries";
 import api from "@/lib/api";
 import { cashFlowEntrySchema, type CashFlowEntryFormData } from "@/lib/validations";
 import { QueryError } from "@/components/query-error";
+import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -291,15 +292,14 @@ export default function CashFlowPage() {
                   <tr key={entry.id} className="border-b hover:bg-muted/50">
                     <td className="p-4">{entry.entryDate || entry.date || "—"}</td>
                     <td className="p-4">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      <StatusBadge
+                        status={entry.entryType || entry.type || "expense"}
+                        tone={
                           entry.entryType === "INCOME" || entry.type === "INCOME"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {entry.entryType || entry.type}
-                      </span>
+                            ? "success"
+                            : "danger"
+                        }
+                      />
                     </td>
                     <td className="p-4">{entry.category || "—"}</td>
                     <td className="p-4 text-muted-foreground">{entry.description || "—"}</td>

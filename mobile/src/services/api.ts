@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { AUTH_TOKEN_KEYS, buildAuthHeader } from './auth-storage';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://cdmsbackend.onrender.com/api';
 
@@ -13,10 +14,8 @@ const api = axios.create({
 
 api.interceptors.request.use(
   async (config) => {
-    const token = await SecureStore.getItemAsync('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEYS.access);
+    Object.assign(config.headers, buildAuthHeader(token));
     return config;
   },
   (error) => {
@@ -33,22 +32,22 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await SecureStore.getItemAsync('refreshToken');
+        const refreshToken = await SecureStore.getItemAsync(AUTH_TOKEN_KEYS.refresh);
         if (refreshToken) {
           const response = await axios.post(`${API_URL}/auth/refresh`, {
             refreshToken,
           });
 
           const { accessToken, refreshToken: newRefreshToken } = response.data;
-          await SecureStore.setItemAsync('accessToken', accessToken);
-          await SecureStore.setItemAsync('refreshToken', newRefreshToken);
+          await SecureStore.setItemAsync(AUTH_TOKEN_KEYS.access, accessToken);
+          await SecureStore.setItemAsync(AUTH_TOKEN_KEYS.refresh, newRefreshToken);
 
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          Object.assign(originalRequest.headers, buildAuthHeader(accessToken));
           return api(originalRequest);
         }
       } catch (refreshError) {
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
+        await SecureStore.deleteItemAsync(AUTH_TOKEN_KEYS.access);
+        await SecureStore.deleteItemAsync(AUTH_TOKEN_KEYS.refresh);
       }
     }
 

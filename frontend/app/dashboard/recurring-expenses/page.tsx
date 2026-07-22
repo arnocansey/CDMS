@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/select";
 import { Plus, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { StatusBadge } from "@/components/status-badge";
 
 export default function RecurringExpensesPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -39,6 +41,8 @@ export default function RecurringExpensesPage() {
     paymentMethod: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -83,14 +87,22 @@ export default function RecurringExpensesPage() {
     }
   };
 
-  const handleCancel = async (id: number) => {
-    if (!confirm("Cancel this recurring expense?")) return;
+  const requestCancel = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmCancel = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      await api.put(`/recurring-expenses/${id}/cancel`);
+      await api.put(`/recurring-expenses/${pendingDeleteId}/cancel`);
       toast.success("Recurring expense cancelled");
       fetchExpenses();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to cancel");
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -142,24 +154,14 @@ export default function RecurringExpensesPage() {
                       <td className="p-4">{e.frequency}</td>
                       <td className="p-4">{e.nextDueDate || "—"}</td>
                       <td className="p-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            e.status === "ACTIVE"
-                              ? "bg-green-100 text-green-800"
-                              : e.status === "CANCELLED"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {e.status}
-                        </span>
+                        <StatusBadge status={e.status || "active"} />
                       </td>
                       <td className="p-4">
                         {e.status === "ACTIVE" && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleCancel(e.id)}
+                            onClick={() => requestCancel(e.id)}
                           >
                             <XCircle className="h-4 w-4 text-red-500" />
                           </Button>
@@ -274,6 +276,15 @@ export default function RecurringExpensesPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Cancel recurring expense?"
+        description="This will stop future charges for this subscription."
+        confirmLabel="Confirm"
+        onConfirm={confirmCancel}
+      />
     </div>
   );
 }

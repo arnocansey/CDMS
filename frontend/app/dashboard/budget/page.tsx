@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Edit, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   BarChart,
   Bar,
@@ -53,6 +54,8 @@ export default function BudgetPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<any>(null);
   const [selectedPeriod, setSelectedPeriod] = useState("2026");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const { data: budgets = [], isLoading: isBudgetsLoading, isError: isBudgetsError } = useBudgets(selectedPeriod);
   const { data: summary = {}, isError: isSummaryError } = useBudgetSummary(selectedPeriod);
@@ -80,13 +83,21 @@ export default function BudgetPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this budget?")) return;
+  const requestDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      await api.delete(`/budgets/${id}`);
+      await api.delete(`/budgets/${pendingDeleteId}`);
       toast.success("Budget deleted");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to delete budget");
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -244,7 +255,7 @@ export default function BudgetPage() {
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(b)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(b.id)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => requestDelete(b.id)}>
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
@@ -270,6 +281,15 @@ export default function BudgetPage() {
         onOpenChange={handleCloseDialog}
         editingBudget={editingBudget}
         period={selectedPeriod}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete budget?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
       />
     </div>
   );

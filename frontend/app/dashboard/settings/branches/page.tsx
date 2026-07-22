@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { Plus, Edit2, Trash2, MapPin, Building, ToggleLeft, ToggleRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface District {
   id: number;
@@ -46,6 +47,8 @@ export default function BranchesDistrictsPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pending, setPending] = useState<{ type: "branch" | "district"; id: number } | null>(null);
 
   // Branch Modal State
   const [branchModalOpen, setBranchModalOpen] = useState(false);
@@ -187,25 +190,32 @@ export default function BranchesDistrictsPage() {
     }
   };
 
-  const handleDeleteBranch = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this branch?")) return;
-    try {
-      await api.delete(`/branches/${id}`);
-      toast.success("Branch deleted");
-      fetchData();
-    } catch {
-      toast.error("Failed to delete branch");
-    }
+  const requestDeleteBranch = (id: number) => {
+    setPending({ type: "branch", id });
+    setConfirmOpen(true);
   };
 
-  const handleDeleteDistrict = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this district? All branches inside will lose district references.")) return;
+  const requestDeleteDistrict = (id: number) => {
+    setPending({ type: "district", id });
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!pending) return;
     try {
-      await api.delete(`/districts/${id}`);
-      toast.success("District deleted");
+      if (pending.type === "branch") {
+        await api.delete(`/branches/${pending.id}`);
+        toast.success("Branch deleted");
+      } else {
+        await api.delete(`/districts/${pending.id}`);
+        toast.success("District deleted");
+      }
       fetchData();
     } catch {
-      toast.error("Failed to delete district");
+      toast.error(pending.type === "branch" ? "Failed to delete branch" : "Failed to delete district");
+    } finally {
+      setConfirmOpen(false);
+      setPending(null);
     }
   };
 
@@ -309,7 +319,7 @@ export default function BranchesDistrictsPage() {
                             <Button variant="outline" size="sm" onClick={() => handleOpenBranchModal(b)}>
                               <Edit2 className="h-3 w-3" />
                             </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleDeleteBranch(b.id)}>
+                            <Button variant="destructive" size="sm" onClick={() => requestDeleteBranch(b.id)}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
@@ -353,7 +363,7 @@ export default function BranchesDistrictsPage() {
                           <Button variant="outline" size="sm" onClick={() => handleOpenDistrictModal(d)}>
                             <Edit2 className="h-3 w-3" />
                           </Button>
-                          <Button variant="destructive" size="sm" onClick={() => handleDeleteDistrict(d.id)}>
+                          <Button variant="destructive" size="sm" onClick={() => requestDeleteDistrict(d.id)}>
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
@@ -530,6 +540,22 @@ export default function BranchesDistrictsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          setConfirmOpen(open);
+          if (!open) setPending(null);
+        }}
+        title={pending?.type === "district" ? "Delete district?" : "Delete branch?"}
+        description={
+          pending?.type === "district"
+            ? "All branches inside will lose district references. This action cannot be undone."
+            : "This action cannot be undone."
+        }
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

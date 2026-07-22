@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { PageSpinner } from "@/components/page-spinner";
 import { StatusBadge } from "@/components/status-badge";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface EventForm {
   title: string;
@@ -69,6 +70,8 @@ export default function EventsPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<EventForm>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const canWrite =
     user?.roles?.includes("ADMIN") ||
@@ -137,14 +140,22 @@ export default function EventsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this event?")) return;
+  const requestDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      await api.delete(`/events/${id}`);
+      await api.delete(`/events/${pendingDeleteId}`);
       toast.success("Event deleted");
       queryClient.invalidateQueries({ queryKey: ["events"] });
     } catch {
       toast.error("Failed to delete event");
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -238,7 +249,7 @@ export default function EventsPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDelete(event.id)}
+                              onClick={() => requestDelete(event.id)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -360,6 +371,15 @@ export default function EventsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete event?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

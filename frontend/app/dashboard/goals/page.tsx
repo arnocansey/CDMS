@@ -44,6 +44,8 @@ import {
   HandCoins,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { StatusBadge } from "@/components/status-badge";
 
 export default function GoalsPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -52,6 +54,8 @@ export default function GoalsPage() {
   const [contributionDialogOpen, setContributionDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<any>(null);
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const { data: goals = [], isLoading: isGoalsLoading, isError: isGoalsError, refetch } = useFinancialGoals();
   const { data: summary, isError: isSummaryError } = useGoalSummary();
@@ -70,14 +74,22 @@ export default function GoalsPage() {
   const totalTarget = summary?.totalTarget ?? goals.reduce((s: number, g: any) => s + (g.targetAmount || 0), 0);
   const totalRaised = summary?.totalRaised ?? goals.reduce((s: number, g: any) => s + (g.amountRaised || 0), 0);
 
-  const deleteGoal = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this goal?")) return;
+  const requestDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      await api.delete(`/financial-goals/${id}`);
+      await api.delete(`/financial-goals/${pendingDeleteId}`);
       toast.success("Goal deleted");
       refetch();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to delete goal");
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -186,21 +198,9 @@ export default function GoalsPage() {
                       <CardTitle className="text-lg">{goal.name}</CardTitle>
                       <div className="flex items-center gap-2">
                         {goal.category && (
-                          <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                            {goal.category}
-                          </span>
+                          <StatusBadge status={goal.category} tone="primary" label={goal.category} />
                         )}
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            goal.status === "COMPLETED"
-                              ? "bg-green-100 text-green-800"
-                              : goal.status === "ACTIVE"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {goal.status}
-                        </span>
+                        <StatusBadge status={goal.status || "active"} />
                       </div>
                     </div>
                   </div>
@@ -269,7 +269,7 @@ export default function GoalsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => deleteGoal(goal.id)}
+                      onClick={() => requestDelete(goal.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -302,6 +302,15 @@ export default function GoalsPage() {
           setSelectedGoal(null);
           refetch();
         }}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete goal?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
       />
     </div>
   );

@@ -22,6 +22,7 @@ import { Plus, Edit, Trash2, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { PageSpinner } from "@/components/page-spinner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface DepartmentForm {
   name: string;
@@ -46,6 +47,8 @@ export default function DepartmentsPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<DepartmentForm>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const isAdmin = user?.roles?.includes("ADMIN");
 
@@ -102,14 +105,22 @@ export default function DepartmentsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this department?")) return;
+  const requestDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      await api.delete(`/departments/${id}`);
+      await api.delete(`/departments/${pendingDeleteId}`);
       toast.success("Department deleted");
       queryClient.invalidateQueries({ queryKey: ["departments"] });
     } catch {
       toast.error("Failed to delete department");
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -180,7 +191,7 @@ export default function DepartmentsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(dept.id)}
+                            onClick={() => requestDelete(dept.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -266,6 +277,15 @@ export default function DepartmentsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete department?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

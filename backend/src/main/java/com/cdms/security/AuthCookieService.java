@@ -36,11 +36,14 @@ public class AuthCookieService {
     }
 
     private ResponseCookie buildCookie(String name, String value, Duration maxAge) {
+        // Cross-origin SPA (e.g. Vercel → Render) needs SameSite=None + Secure.
+        // Localhost keeps Lax so cookies still work over http.
+        String sameSite = secureCookies ? "None" : "Lax";
         return ResponseCookie.from(name, value)
                 .httpOnly(true)
                 .secure(secureCookies)
                 .path("/")
-                .sameSite("Lax")
+                .sameSite(sameSite)
                 .maxAge(maxAge)
                 .build();
     }

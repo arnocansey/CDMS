@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowRightLeft, CheckCircle, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { StatusBadge } from "@/components/status-badge";
 
 export default function BankReconciliationPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -297,17 +298,7 @@ export default function BankReconciliationPage() {
                         ${(h.bankBalance - h.bookBalance)?.toLocaleString()}
                       </td>
                       <td className="p-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            h.status === "COMPLETED"
-                              ? "bg-green-100 text-green-800"
-                              : h.status === "IN_PROGRESS"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {h.status}
-                        </span>
+                        <StatusBadge status={h.status || "pending"} />
                       </td>
                     </tr>
                   ))}

@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { PageSpinner } from "@/components/page-spinner";
 import { StatusBadge } from "@/components/status-badge";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export default function MembersPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -45,6 +46,8 @@ export default function MembersPage() {
   }>({ page: 0, size: 20 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const { data, isLoading: isDataLoading, isError } = useMembers(searchParams);
   const { data: departments = [] } = useDepartments();
@@ -116,14 +119,22 @@ export default function MembersPage() {
     }));
   };
 
-  const deleteMember = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this member?")) return;
+  const requestDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      await api.delete(`/members/${id}`);
+      await api.delete(`/members/${pendingDeleteId}`);
       toast.success("Member deleted");
       setSearchParams((prev) => ({ ...prev }));
     } catch (error) {
       toast.error("Failed to delete member");
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -303,7 +314,7 @@ export default function MembersPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteMember(member.id)}
+                          onClick={() => requestDelete(member.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -503,6 +514,15 @@ export default function MembersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete member?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

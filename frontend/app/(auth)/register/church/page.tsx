@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { branding } from "@/lib/branding";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Church, ArrowLeft, ArrowRight, Mail, Lock, User, MapPin, Check, Eye, EyeOff } from "lucide-react";
+import { Church, ArrowLeft, ArrowRight, Mail, Lock, User, Check, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
 
 const churchRegistrationSchema = z.object({
@@ -29,21 +29,42 @@ const churchRegistrationSchema = z.object({
 
 type ChurchRegistrationData = z.infer<typeof churchRegistrationSchema>;
 
+function slugifyChurchName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/['']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+}
+
 export default function ChurchRegistrationPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
+  const slugManuallyEdited = useRef(false);
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ChurchRegistrationData>({
     resolver: zodResolver(churchRegistrationSchema),
   });
 
+  const churchName = watch("churchName", "");
   const churchSlug = watch("churchSlug", "");
+
+  useEffect(() => {
+    if (slugManuallyEdited.current) return;
+    const nextSlug = slugifyChurchName(churchName || "");
+    setValue("churchSlug", nextSlug, { shouldValidate: nextSlug.length > 0 });
+  }, [churchName, setValue]);
+
+  const churchSlugRegister = register("churchSlug");
 
   const onSubmit = async (data: ChurchRegistrationData) => {
     try {
@@ -58,12 +79,14 @@ export default function ChurchRegistrationPage() {
         city: data.city,
         state: data.state,
       });
-      toast.success("Registration request submitted! A platform admin will review it.");
-      router.push("/login");
+      toast.success("Registration submitted! A platform admin will review your church.");
+      router.push("/pending-approval");
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Registration failed");
     }
   };
+
+  const progress = step === 1 ? 50 : 100;
 
   return (
     <div className="flex min-h-screen">
@@ -111,18 +134,43 @@ export default function ChurchRegistrationPage() {
       </div>
 
       <div className="flex w-full items-center justify-center px-4 py-12 lg:w-1/2">
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md space-y-7">
           <div className="text-center lg:hidden">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary">
               <Church className="h-7 w-7 text-primary-foreground" />
             </div>
           </div>
 
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Register your church</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Step {step} of 2 — {step === 1 ? "Church details" : "Your admin account"}
-            </p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-foreground">
+                Step {step} of 2
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {step === 1 ? "Church details" : "Admin account"}
+              </p>
+            </div>
+            <div
+              className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-valuenow={progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Registration progress: step ${step} of 2`}
+            >
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Register your church</h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                {step === 1
+                  ? "Tell us about your church to create its workspace."
+                  : "Create the admin account that will manage your church."}
+              </p>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -134,19 +182,28 @@ export default function ChurchRegistrationPage() {
                     <Church className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input id="churchName" placeholder="Grace Community Church" className="h-11 pl-10" {...register("churchName")} />
                   </div>
-                  {errors.churchName && <p className="text-sm text-red-500">{errors.churchName.message}</p>}
+                  {errors.churchName && <p className="text-sm text-destructive">{errors.churchName.message}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="churchSlug" className="text-sm font-medium">Church URL Slug</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">cdms.app/</span>
-                    <Input id="churchSlug" placeholder="grace-community-church" className="h-11 pl-[72px]" {...register("churchSlug")} />
+                    <Input
+                      id="churchSlug"
+                      placeholder="grace-community-church"
+                      className="h-11 pl-[72px]"
+                      {...churchSlugRegister}
+                      onChange={(e) => {
+                        slugManuallyEdited.current = true;
+                        churchSlugRegister.onChange(e);
+                      }}
+                    />
                   </div>
-                  {errors.churchSlug && <p className="text-sm text-red-500">{errors.churchSlug.message}</p>}
+                  {errors.churchSlug && <p className="text-sm text-destructive">{errors.churchSlug.message}</p>}
                   {churchSlug && (
                     <p className="text-xs text-muted-foreground">
-                      Your login URL: <span className="font-medium">cdms.app/{churchSlug}</span>
+                      Your login URL: <span className="font-medium text-foreground">cdms.app/{churchSlug}</span>
                     </p>
                   )}
                 </div>
@@ -157,7 +214,7 @@ export default function ChurchRegistrationPage() {
                     <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input id="email" type="email" placeholder="office@gracechurch.org" className="h-11 pl-10" {...register("email")} />
                   </div>
-                  {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+                  {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -186,12 +243,12 @@ export default function ChurchRegistrationPage() {
                       <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input id="firstName" placeholder="John" className="h-11 pl-10" {...register("firstName")} />
                     </div>
-                    {errors.firstName && <p className="text-sm text-red-500">{errors.firstName.message}</p>}
+                    {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
                     <Input id="lastName" placeholder="Doe" className="h-11" {...register("lastName")} />
-                    {errors.lastName && <p className="text-sm text-red-500">{errors.lastName.message}</p>}
+                    {errors.lastName && <p className="text-sm text-destructive">{errors.lastName.message}</p>}
                   </div>
                 </div>
 
@@ -204,7 +261,7 @@ export default function ChurchRegistrationPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+                  {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
                 </div>
 
                 <div className="flex gap-3">

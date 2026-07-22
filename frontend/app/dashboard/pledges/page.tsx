@@ -43,6 +43,8 @@ import {
   HandCoins,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { StatusBadge } from "@/components/status-badge";
 
 export default function PledgesPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -51,6 +53,8 @@ export default function PledgesPage() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [editingPledge, setEditingPledge] = useState<any>(null);
   const [selectedPledge, setSelectedPledge] = useState<any>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const { data: pledges = [], isLoading: isPledgesLoading, isError: isPledgesError, refetch } = usePledges();
   const { data: summary, isError: isSummaryError } = usePledgeSummary();
@@ -69,14 +73,22 @@ export default function PledgesPage() {
   const outstanding = summary?.outstanding ?? pledges.reduce((s: number, p: any) => s + (p.outstanding || 0), 0);
   const activeCount = summary?.activeCount ?? pledges.filter((p: any) => p.status === "ACTIVE").length;
 
-  const deletePledge = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this pledge?")) return;
+  const requestDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (pendingDeleteId == null) return;
     try {
-      await api.delete(`/pledges/${id}`);
+      await api.delete(`/pledges/${pendingDeleteId}`);
       toast.success("Pledge deleted");
       refetch();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to delete pledge");
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -192,17 +204,7 @@ export default function PledgesPage() {
                     <td className="p-4 text-red-600">${(pledge.outstanding || 0).toLocaleString()}</td>
                     <td className="p-4">{pledge.dueDate || "—"}</td>
                     <td className="p-4">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          pledge.status === "COMPLETED"
-                            ? "bg-green-100 text-green-800"
-                            : pledge.status === "ACTIVE"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {pledge.status}
-                      </span>
+                      <StatusBadge status={pledge.status || "active"} />
                     </td>
                     <td className="p-4">{pledge.frequency || "—"}</td>
                     <td className="p-4">
@@ -226,7 +228,7 @@ export default function PledgesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deletePledge(pledge.id)}
+                          onClick={() => requestDelete(pledge.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -268,6 +270,15 @@ export default function PledgesPage() {
           setSelectedPledge(null);
           refetch();
         }}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete pledge?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
       />
     </div>
   );
