@@ -26,10 +26,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Users } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
+import { PageSpinner } from "@/components/page-spinner";
+import { StatusBadge } from "@/components/status-badge";
 
 export default function MembersPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -172,11 +175,7 @@ export default function MembersPage() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   if (isDataLoading) {
@@ -285,15 +284,7 @@ export default function MembersPage() {
                     <td className="p-4">{member.departmentName || "—"}</td>
                     <td className="p-4">{member.branchName || "—"}</td>
                     <td className="p-4">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          member.active
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {member.active ? "Active" : "Inactive"}
-                      </span>
+                      <StatusBadge status={member.active ? "active" : "inactive"} />
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
@@ -322,8 +313,14 @@ export default function MembersPage() {
                 ))}
                 {members.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                      No members found
+                    <td colSpan={8}>
+                      <EmptyState
+                        icon={Users}
+                        title="No members found"
+                        description="Add your first member to get started."
+                        actionLabel="Add Member"
+                        onAction={openCreateDialog}
+                      />
                     </td>
                   </tr>
                 )}

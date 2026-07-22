@@ -20,6 +20,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Check, Heart } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/empty-state";
+import { PageSpinner } from "@/components/page-spinner";
+import { StatusBadge } from "@/components/status-badge";
 
 interface PrayerForm {
   title: string;
@@ -31,13 +34,6 @@ const emptyForm: PrayerForm = {
   title: "",
   description: "",
   anonymous: false,
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  IN_PROGRESS: "bg-blue-100 text-blue-800",
-  ANSWERED: "bg-green-100 text-green-800",
-  CLOSED: "bg-gray-100 text-gray-800",
 };
 
 export default function PrayerRequestsPage() {
@@ -110,19 +106,11 @@ export default function PrayerRequestsPage() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   if (isDataLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   if (isError) {
@@ -181,13 +169,7 @@ export default function PrayerRequestsPage() {
                         {req.anonymous ? "Anonymous" : req.memberName || "—"}
                       </td>
                       <td className="p-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            STATUS_COLORS[req.status] || "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {req.status?.replace(/_/g, " ") || "—"}
-                        </span>
+                        <StatusBadge status={req.status || "pending"} />
                       </td>
                       <td className="p-4">{req.prayedBy || "—"}</td>
                       {canModerate && (
@@ -219,11 +201,14 @@ export default function PrayerRequestsPage() {
                 })}
                 {requests.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={canModerate ? 5 : 4}
-                      className="p-8 text-center text-muted-foreground"
-                    >
-                      No prayer requests found
+                    <td colSpan={canModerate ? 5 : 4}>
+                      <EmptyState
+                        icon={Heart}
+                        title="No prayer requests found"
+                        description="Submit a prayer request for the church community."
+                        actionLabel="New Request"
+                        onAction={openCreate}
+                      />
                     </td>
                   </tr>
                 )}

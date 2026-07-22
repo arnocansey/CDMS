@@ -18,8 +18,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/empty-state";
+import { PageSpinner } from "@/components/page-spinner";
+import { StatusBadge } from "@/components/status-badge";
 
 interface EventForm {
   title: string;
@@ -146,19 +149,11 @@ export default function EventsPage() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   if (isDataLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   if (isError) {
@@ -221,15 +216,11 @@ export default function EventsPage() {
                     </td>
                     <td className="p-4">{event.location || "—"}</td>
                     <td className="p-4">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          event.recurring
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {event.recurring ? "Yes" : "No"}
-                      </span>
+                      <StatusBadge
+                        status={event.recurring ? "active" : "inactive"}
+                        label={event.recurring ? "Yes" : "No"}
+                        tone={event.recurring ? "info" : "neutral"}
+                      />
                     </td>
                     {(canWrite || canDelete) && (
                       <td className="p-4">
@@ -259,11 +250,14 @@ export default function EventsPage() {
                 ))}
                 {events.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={canWrite || canDelete ? 6 : 5}
-                      className="p-8 text-center text-muted-foreground"
-                    >
-                      No events found
+                    <td colSpan={canWrite || canDelete ? 6 : 5}>
+                      <EmptyState
+                        icon={Calendar}
+                        title="No events found"
+                        description="Create an event to see it listed here."
+                        actionLabel={canWrite ? "Add Event" : undefined}
+                        onAction={canWrite ? openCreate : undefined}
+                      />
                     </td>
                   </tr>
                 )}

@@ -32,7 +32,11 @@ import {
   Mail,
   Calendar,
   Search,
+  UsersRound,
 } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import { PageSpinner } from "@/components/page-spinner";
+import { StatusBadge } from "@/components/status-badge";
 import {
   LineChart,
   Line,
@@ -61,20 +65,6 @@ interface Visitor {
   followUpDate: string;
   followUpNotes: string;
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  FIRST_TIME: "bg-blue-100 text-blue-800",
-  RETURNING: "bg-yellow-100 text-yellow-800",
-  REGULAR: "bg-green-100 text-green-800",
-  MEMBER_CONVERT: "bg-purple-100 text-purple-800",
-};
-
-const FOLLOWUP_COLORS: Record<string, string> = {
-  NONE: "bg-gray-100 text-gray-800",
-  CONTACTED: "bg-blue-100 text-blue-800",
-  SCHEDULED: "bg-yellow-100 text-yellow-800",
-  COMPLETED: "bg-green-100 text-green-800",
-};
 
 export default function VisitorsPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -224,11 +214,7 @@ export default function VisitorsPage() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   return (
@@ -365,9 +351,7 @@ export default function VisitorsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            </div>
+            <PageSpinner />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -386,8 +370,14 @@ export default function VisitorsPage() {
                 <tbody>
                   {filteredVisitors.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-muted-foreground">
-                        No visitors found
+                      <td colSpan={8}>
+                        <EmptyState
+                          icon={UsersRound}
+                          title="No visitors found"
+                          description="Record a visitor to start tracking follow-ups."
+                          actionLabel="Add Visitor"
+                          onAction={() => setDialogOpen(true)}
+                        />
                       </td>
                     </tr>
                   ) : (
@@ -430,23 +420,11 @@ export default function VisitorsPage() {
                           </span>
                         </td>
                         <td className="p-4">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              STATUS_COLORS[visitor.status] || "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {visitor.status?.replace(/_/g, " ")}
-                          </span>
+                          <StatusBadge status={visitor.status || "none"} />
                         </td>
                         <td className="p-4 text-center">{visitor.visitCount}</td>
                         <td className="p-4">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              FOLLOWUP_COLORS[visitor.followUpStatus] || "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {visitor.followUpStatus?.replace(/_/g, " ")}
-                          </span>
+                          <StatusBadge status={visitor.followUpStatus || "none"} />
                         </td>
                         <td className="p-4">
                           <div className="flex items-center gap-1">

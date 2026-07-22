@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import api from "@/lib/api";
@@ -18,7 +19,14 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface HeaderProps {
-  onMenuToggle: () => void;
+  onMenuToggle?: () => void;
+}
+
+function getInitials(firstName?: string, lastName?: string, email?: string) {
+  const first = firstName?.trim()?.[0];
+  const last = lastName?.trim()?.[0];
+  if (first || last) return `${first ?? ""}${last ?? ""}`.toUpperCase();
+  return (email?.trim()?.[0] ?? "U").toUpperCase();
 }
 
 export function Header({ onMenuToggle }: HeaderProps) {
@@ -41,35 +49,42 @@ export function Header({ onMenuToggle }: HeaderProps) {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-6">
-      <div className="flex items-center gap-4">
+    <header className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
+      <div className="flex items-center gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={onMenuToggle}
           className="md:hidden"
+          disabled={!onMenuToggle}
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <h1 className="hidden text-lg font-semibold sm:block">{branding.systemName}</h1>
+        <div className="hidden sm:block">
+          <h1 className="text-lg font-semibold leading-tight">
+            {branding.churchName}
+          </h1>
+          <p className="text-xs text-muted-foreground">Dashboard</p>
+        </div>
       </div>
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-1 sm:gap-2">
         <ThemeToggle />
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
+        <Button variant="ghost" size="icon" className="relative" asChild>
+          <Link href="/dashboard/notifications" aria-label="Notifications">
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Link>
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
                 <AvatarFallback>
-                  {user?.firstName?.[0]}
-                  {user?.lastName?.[0]}
+                  {getInitials(user?.firstName, user?.lastName, user?.email)}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -78,14 +93,16 @@ export function Header({ onMenuToggle }: HeaderProps) {
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">
-                  {user?.firstName} {user?.lastName}
+                  {user?.firstName || user?.lastName
+                    ? `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim()
+                    : "User"}
                 </p>
                 <p className="text-xs leading-none text-muted-foreground">
                   {user?.email}
                 </p>
                 {user?.accountStatus === "PENDING" && (
                   <div className="flex items-center gap-1 pt-1">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
                       <AlertTriangle className="h-3 w-3" />
                       Account Pending
                     </span>

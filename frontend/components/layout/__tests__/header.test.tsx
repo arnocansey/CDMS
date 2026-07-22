@@ -3,6 +3,13 @@ import { Header } from "@/components/layout/header";
 import { useAuth } from "@/hooks/use-auth";
 
 jest.mock("@/hooks/use-auth");
+jest.mock("next/link", () => {
+  return ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  );
+});
 jest.mock("next-themes", () => ({
   useTheme: () => ({
     theme: "light",
@@ -39,9 +46,10 @@ describe("Header Component", () => {
     expect(screen.getByRole("banner")).toBeInTheDocument();
   });
 
-  it("renders system title", () => {
+  it("renders church title", () => {
     render(<Header />);
-    expect(screen.getByText("Church Database Management System")).toBeInTheDocument();
+    expect(screen.getByText("Grace Community Church")).toBeInTheDocument();
+    expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
 
   it("renders user initials in avatar", () => {

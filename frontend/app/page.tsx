@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
+import { branding } from "@/lib/branding";
 import { LandingNavbar } from "@/components/layout/landing-navbar";
 import { LandingFooter } from "@/components/layout/landing-footer";
 import { Button } from "@/components/ui/button";
@@ -107,17 +109,24 @@ export default function LandingPage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 py-24 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+        <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 py-20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 sm:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-                Empower Your{" "}
-                <span className="text-primary">Church Community</span>
-              </h1>
-              <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-                A modern, all-in-one platform to manage members, track
-                attendance, handle finances, and strengthen prayer life &mdash;
-                built for churches of every size.
+              <div className="mb-8 flex flex-col items-center gap-5">
+                <Image
+                  src="/logo.png"
+                  alt={`${branding.shortName} logo`}
+                  width={88}
+                  height={88}
+                  className="object-contain"
+                  priority
+                />
+                <h1 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
+                  {branding.shortName}
+                </h1>
+              </div>
+              <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
+                {branding.tagline}
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 {isAuthenticated ? (
@@ -161,7 +170,7 @@ export default function LandingPage() {
               {features.map((feature) => (
                 <div
                   key={feature.title}
-                  className="group rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md glass"
+                  className="group rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                     <feature.icon className="h-6 w-6 text-primary" />
@@ -218,7 +227,7 @@ export default function LandingPage() {
               {testimonials.map((t) => (
                 <div
                   key={t.name}
-                  className="rounded-xl border bg-card p-6 shadow-sm glass"
+                  className="rounded-xl border bg-card p-6 shadow-sm"
                 >
                   <div className="flex gap-1">
                     {[...Array(5)].map((_, i) => (

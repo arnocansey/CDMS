@@ -18,8 +18,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Megaphone } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/empty-state";
+import { PageSpinner } from "@/components/page-spinner";
+import { StatusBadge } from "@/components/status-badge";
 
 interface AnnouncementForm {
   title: string;
@@ -125,19 +128,11 @@ export default function AnnouncementsPage() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   if (isDataLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   if (isError) {
@@ -195,15 +190,7 @@ export default function AnnouncementsPage() {
                     <td className="p-4">{item.publishDate || "—"}</td>
                     <td className="p-4">{item.expiryDate || "—"}</td>
                     <td className="p-4">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          item.published
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {item.published ? "Published" : "Draft"}
-                      </span>
+                      <StatusBadge status={item.published ? "published" : "draft"} />
                     </td>
                     {(canWrite || canDelete) && (
                       <td className="p-4">
@@ -233,11 +220,14 @@ export default function AnnouncementsPage() {
                 ))}
                 {announcements.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={canWrite || canDelete ? 5 : 4}
-                      className="p-8 text-center text-muted-foreground"
-                    >
-                      No announcements found
+                    <td colSpan={canWrite || canDelete ? 5 : 4}>
+                      <EmptyState
+                        icon={Megaphone}
+                        title="No announcements found"
+                        description="Create an announcement to share with your congregation."
+                        actionLabel={canWrite ? "Add Announcement" : undefined}
+                        onAction={canWrite ? openCreate : undefined}
+                      />
                     </td>
                   </tr>
                 )}

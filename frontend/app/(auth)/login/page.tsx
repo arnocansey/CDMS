@@ -13,7 +13,13 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
-import { Eye, EyeOff, Church, ArrowRight, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Church, ArrowRight, Mail, Lock, CheckCircle } from "lucide-react";
+
+const productBullets = [
+  "Member management",
+  "Giving & finance",
+  "Attendance insights",
+];
 
 export default function LoginPage() {
   const [error, setError] = useState("");
@@ -66,22 +72,14 @@ export default function LoginPage() {
             Manage your church&apos;s finances with confidence. Track donations, budgets,
             pledges, and generate reports — all in one place.
           </p>
-          <div className="flex items-center justify-center gap-8 text-sm text-white/70">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">$2.4M+</div>
-              <div>Tracked Annually</div>
-            </div>
-            <div className="h-8 w-px bg-white/30" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">500+</div>
-              <div>Active Members</div>
-            </div>
-            <div className="h-8 w-px bg-white/30" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">99.9%</div>
-              <div>Uptime</div>
-            </div>
-          </div>
+          <ul className="mx-auto max-w-xs space-y-3 text-left text-sm text-white/90">
+            {productBullets.map((bullet) => (
+              <li key={bullet} className="flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 shrink-0 text-white" />
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
@@ -124,7 +122,7 @@ export default function LoginPage() {
                 />
               </div>
               {errors.email && (
-                <p className="text-sm text-red-500">{errors.email.message}</p>
+                <p className="text-sm text-destructive">{errors.email.message}</p>
               )}
             </div>
 
@@ -162,7 +160,7 @@ export default function LoginPage() {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-sm text-red-500">{errors.password.message}</p>
+                <p className="text-sm text-destructive">{errors.password.message}</p>
               )}
             </div>
 

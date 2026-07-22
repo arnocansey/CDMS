@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { RoleGuard } from "@/components/auth/role-guard";
+import { PageSpinner } from "@/components/page-spinner";
 
 export default function DashboardLayout({
   children,
@@ -27,8 +28,8 @@ export default function DashboardLayout({
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex h-screen items-center justify-center bg-background">
+        <PageSpinner className="min-h-0" />
       </div>
     );
   }
@@ -39,11 +40,11 @@ export default function DashboardLayout({
 
   return (
     <RoleGuard>
-      <div className="flex h-screen">
+      <div className="flex h-screen bg-background">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="flex flex-1 flex-col overflow-hidden">
           <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-          <main className="flex-1 overflow-y-auto p-6 glass-subtle">{children}</main>
+          <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
         </div>
       </div>
     </RoleGuard>

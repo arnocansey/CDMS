@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -25,7 +26,6 @@ import {
   ArrowRightLeft,
   TrendingUp,
   HeartPulse,
-  Church,
   Crown,
   UserCheck,
   Repeat,
@@ -44,6 +44,7 @@ import {
   ShieldCheck,
   Megaphone,
   Heart,
+  ChevronDown,
 } from "lucide-react";
 
 interface NavItem {
@@ -123,10 +124,17 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+function groupHasActive(items: NavItem[], pathname: string) {
+  return items.some(
+    (item) =>
+      pathname === item.href ||
+      (item.href !== "/dashboard" && pathname.startsWith(item.href))
+  );
+}
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
-
   const userRoles = user?.roles ?? [];
 
   const hasAccess = (item: NavItem) => {
@@ -134,38 +142,94 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return item.roles.some((role) => userRoles.includes(role));
   };
 
-  const renderNavGroup = (items: NavItem[], label: string) => {
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    Core: true,
+    Finance: true,
+    Insights: true,
+    Calendar: true,
+    Settings: true,
+    Notifications: true,
+    Administration: true,
+  });
+
+  useEffect(() => {
+    const groups: { label: string; items: NavItem[] }[] = [
+      { label: "Core", items: coreNav },
+      { label: "Finance", items: financeNav },
+      { label: "Insights", items: insightsNav },
+      { label: "Calendar", items: calendarNav },
+      { label: "Settings", items: settingsNav },
+      { label: "Notifications", items: notificationsNav },
+      { label: "Administration", items: adminNav },
+    ];
+    setOpenGroups((prev) => {
+      const next = { ...prev };
+      for (const group of groups) {
+        if (groupHasActive(group.items.filter(hasAccess), pathname)) {
+          next[group.label] = true;
+        }
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const renderNavGroup = (items: NavItem[], label: string, collapsible = false) => {
     const filtered = items.filter(hasAccess);
     if (filtered.length === 0) return null;
 
+    const isOpenGroup = openGroups[label] ?? true;
+
     return (
-      <div className="mb-4">
-        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </p>
-        <div className="space-y-1">
-          {filtered.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.name}
-              </Link>
-            );
-          })}
-        </div>
+      <div className="mb-3">
+        {collapsible ? (
+          <button
+            type="button"
+            onClick={() => toggleGroup(label)}
+            className="mb-1 flex w-full items-center justify-between rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+          >
+            <span>{label}</span>
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 transition-transform",
+                isOpenGroup ? "rotate-0" : "-rotate-90"
+              )}
+            />
+          </button>
+        ) : (
+          <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </p>
+        )}
+        {(!collapsible || isOpenGroup) && (
+          <div className="space-y-0.5">
+            {filtered.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
@@ -186,26 +250,26 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
       >
         <div className="flex h-full w-64 flex-col border-r bg-card">
-          <div className="flex h-16 items-center justify-between border-b px-6">
+          <div className="flex h-16 shrink-0 items-center justify-between border-b px-4">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg overflow-hidden bg-white">
-                <Image src="/logo.png" alt="CDMS Logo" width={40} height={40} className="object-contain" />
+              <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white">
+                <Image src="/logo.png" alt="CDMS Logo" width={36} height={36} className="object-contain" />
               </div>
-              <span className="text-xl font-bold">{branding.shortName}</span>
+              <span className="text-lg font-bold tracking-tight">{branding.shortName}</span>
             </Link>
             <button
               onClick={onClose}
-              className="rounded-md p-1 text-muted-foreground hover:text-foreground md:hidden"
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground md:hidden"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
-          <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <nav className="flex-1 overflow-y-auto px-2 py-3">
             {renderNavGroup(coreNav, "Core")}
-            {renderNavGroup(financeNav, "Finance")}
-            {renderNavGroup(insightsNav, "Insights")}
+            {renderNavGroup(financeNav, "Finance", true)}
+            {renderNavGroup(insightsNav, "Insights", true)}
             {renderNavGroup(calendarNav, "Calendar")}
-            {renderNavGroup(settingsNav, "Settings")}
+            {renderNavGroup(settingsNav, "Settings", true)}
             {renderNavGroup(notificationsNav, "Notifications")}
             {renderNavGroup(adminNav, "Administration")}
           </nav>

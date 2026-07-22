@@ -18,8 +18,10 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Building2 } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/empty-state";
+import { PageSpinner } from "@/components/page-spinner";
 
 interface DepartmentForm {
   name: string;
@@ -112,19 +114,11 @@ export default function DepartmentsPage() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   if (isDataLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   if (isError) {
@@ -197,11 +191,14 @@ export default function DepartmentsPage() {
                 ))}
                 {departments.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={isAdmin ? 4 : 3}
-                      className="p-8 text-center text-muted-foreground"
-                    >
-                      No departments found
+                    <td colSpan={isAdmin ? 4 : 3}>
+                      <EmptyState
+                        icon={Building2}
+                        title="No departments found"
+                        description="Create a department to organize your ministries."
+                        actionLabel={isAdmin ? "Add Department" : undefined}
+                        onAction={isAdmin ? openCreate : undefined}
+                      />
                     </td>
                   </tr>
                 )}

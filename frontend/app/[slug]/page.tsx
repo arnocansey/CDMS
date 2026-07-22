@@ -9,7 +9,6 @@ import {
   MapPin,
   Phone,
   Mail,
-  Globe,
   Users,
   Calendar,
   Megaphone,
@@ -101,6 +100,17 @@ export default function ChurchPublicPage() {
   const { church, memberCount, upcomingEvents, announcements } = data;
   const location = [church.city, church.state].filter(Boolean).join(", ");
   const fullAddress = [church.address, location, church.zipCode].filter(Boolean).join(", ");
+  const primary = church.primaryColor || undefined;
+  const secondary = church.secondaryColor || undefined;
+  const accentStyle = primary ? { color: primary } : undefined;
+  const primaryBtnStyle = primary
+    ? { backgroundColor: primary, borderColor: primary, color: "#fff" }
+    : undefined;
+  const secondaryBtnStyle = secondary
+    ? { borderColor: secondary, color: secondary }
+    : primary
+      ? { borderColor: primary, color: primary }
+      : undefined;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -108,7 +118,10 @@ export default function ChurchPublicPage() {
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary"
+              style={primary ? { backgroundColor: primary } : undefined}
+            >
               <Church className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="text-lg font-bold tracking-tight">CDMS</span>
@@ -117,7 +130,7 @@ export default function ChurchPublicPage() {
             <Button asChild variant="ghost" size="sm">
               <Link href="/login">Sign In</Link>
             </Button>
-            <Button asChild size="sm">
+            <Button asChild size="sm" style={primaryBtnStyle}>
               <Link href="/register">Join Church</Link>
             </Button>
           </div>
@@ -127,6 +140,13 @@ export default function ChurchPublicPage() {
       <main className="flex-1">
         {/* Hero */}
         <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 py-20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+          {primary && (
+            <div
+              className="absolute inset-x-0 top-0 h-1.5"
+              style={{ backgroundColor: primary }}
+              aria-hidden
+            />
+          )}
           <div className="mx-auto max-w-5xl px-4 sm:px-6">
             <div className="flex flex-col items-center text-center">
               {church.logoUrl ? (
@@ -136,8 +156,11 @@ export default function ChurchPublicPage() {
                   className="mb-6 h-20 w-20 rounded-2xl object-contain shadow-md"
                 />
               ) : (
-                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 shadow-md">
-                  <Church className="h-10 w-10 text-primary" />
+                <div
+                  className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 shadow-md"
+                  style={primary ? { backgroundColor: `${primary}1a` } : undefined}
+                >
+                  <Church className="h-10 w-10 text-primary" style={accentStyle} />
                 </div>
               )}
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
@@ -147,37 +170,21 @@ export default function ChurchPublicPage() {
                 Welcome to our church community. Join us in worship, fellowship, and service.
               </p>
 
-              {/* Stats */}
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium">
-                    <span className="text-foreground">{memberCount}</span> Members
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium">
-                    <span className="text-foreground">{upcomingEvents.length}</span> Upcoming Events
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Megaphone className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium">
-                    <span className="text-foreground">{announcements.length}</span> Announcements
-                  </span>
-                </div>
-              </div>
-
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg" className="px-8">
+                <Button asChild size="lg" className="px-8" style={primaryBtnStyle}>
                   <Link href="/register">
                     Join Our Church
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
                 {church.website && (
-                  <Button asChild variant="outline" size="lg" className="px-8">
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="lg"
+                    className="px-8"
+                    style={secondaryBtnStyle}
+                  >
                     <a href={church.website} target="_blank" rel="noopener noreferrer">
                       Visit Website
                       <ExternalLink className="ml-2 h-4 w-4" />
@@ -189,13 +196,39 @@ export default function ChurchPublicPage() {
           </div>
         </section>
 
+        {/* Stats */}
+        <section className="border-t py-10">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6">
+            <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Users className="h-5 w-5 text-primary" style={accentStyle} />
+                <span className="text-sm font-medium">
+                  <span className="text-foreground">{memberCount}</span> Members
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Calendar className="h-5 w-5 text-primary" style={accentStyle} />
+                <span className="text-sm font-medium">
+                  <span className="text-foreground">{upcomingEvents.length}</span> Upcoming Events
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Megaphone className="h-5 w-5 text-primary" style={accentStyle} />
+                <span className="text-sm font-medium">
+                  <span className="text-foreground">{announcements.length}</span> Announcements
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Contact Info */}
         <section className="border-t py-12">
           <div className="mx-auto max-w-5xl px-4 sm:px-6">
             <div className="grid gap-6 sm:grid-cols-3">
               {fullAddress && (
                 <div className="flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm">
-                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" style={accentStyle} />
                   <div>
                     <p className="text-sm font-medium">Address</p>
                     <p className="text-sm text-muted-foreground">{fullAddress}</p>
@@ -204,7 +237,7 @@ export default function ChurchPublicPage() {
               )}
               {church.phone && (
                 <div className="flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm">
-                  <Phone className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <Phone className="mt-0.5 h-5 w-5 shrink-0 text-primary" style={accentStyle} />
                   <div>
                     <p className="text-sm font-medium">Phone</p>
                     <a href={`tel:${church.phone}`} className="text-sm text-muted-foreground hover:text-foreground">
@@ -215,7 +248,7 @@ export default function ChurchPublicPage() {
               )}
               {church.email && (
                 <div className="flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm">
-                  <Mail className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <Mail className="mt-0.5 h-5 w-5 shrink-0 text-primary" style={accentStyle} />
                   <div>
                     <p className="text-sm font-medium">Email</p>
                     <a href={`mailto:${church.email}`} className="text-sm text-muted-foreground hover:text-foreground">
@@ -232,15 +265,15 @@ export default function ChurchPublicPage() {
         {upcomingEvents.length > 0 && (
           <section className="border-t bg-muted/30 py-12">
             <div className="mx-auto max-w-5xl px-4 sm:px-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Calendar className="h-5 w-5 text-primary" />
+              <div className="mb-6 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" style={accentStyle} />
                 <h2 className="text-2xl font-bold tracking-tight">Upcoming Events</h2>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {upcomingEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md glass"
+                    className="rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
                   >
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4" />
@@ -269,8 +302,8 @@ export default function ChurchPublicPage() {
         {announcements.length > 0 && (
           <section className="border-t py-12">
             <div className="mx-auto max-w-5xl px-4 sm:px-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Megaphone className="h-5 w-5 text-primary" />
+              <div className="mb-6 flex items-center gap-2">
+                <Megaphone className="h-5 w-5 text-primary" style={accentStyle} />
                 <h2 className="text-2xl font-bold tracking-tight">Announcements</h2>
               </div>
               <div className="space-y-4">
@@ -307,13 +340,13 @@ export default function ChurchPublicPage() {
               Become a part of our community and start your journey with us.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" className="px-8">
+              <Button asChild size="lg" className="px-8" style={primaryBtnStyle}>
                 <Link href="/register">
                   Register Now
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="px-8">
+              <Button asChild variant="outline" size="lg" className="px-8" style={secondaryBtnStyle}>
                 <Link href="/login">Sign In to Dashboard</Link>
               </Button>
             </div>
@@ -326,7 +359,10 @@ export default function ChurchPublicPage() {
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary"
+                style={primary ? { backgroundColor: primary } : undefined}
+              >
                 <Church className="h-4 w-4 text-primary-foreground" />
               </div>
               <span className="font-bold">CDMS</span>

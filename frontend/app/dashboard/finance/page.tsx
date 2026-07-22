@@ -41,6 +41,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, TrendingDown, Wallet, Plus, Download } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/empty-state";
+import { PageSpinner } from "@/components/page-spinner";
 
 type TransactionTab = "donation" | "tithe" | "offering" | "expense";
 type ListTab = "donations" | "tithes" | "offerings" | "expenses";
@@ -137,11 +139,7 @@ export default function FinancePage() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <PageSpinner className="min-h-[50vh]" />;
   }
 
   return (
@@ -283,7 +281,21 @@ export default function FinancePage() {
                       </tr>
                     ))}
                     {donations.length === 0 && (
-                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">{isDataLoading ? "Loading..." : "No donations found"}</td></tr>
+                      <tr>
+                        <td colSpan={5}>
+                          {isDataLoading ? (
+                            <PageSpinner />
+                          ) : (
+                            <EmptyState
+                              icon={DollarSign}
+                              title="No donations found"
+                              description="Record a donation to see it listed here."
+                              actionLabel="Record Transaction"
+                              onAction={() => setDialogOpen(true)}
+                            />
+                          )}
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
@@ -321,7 +333,21 @@ export default function FinancePage() {
                       </tr>
                     ))}
                     {tithes.length === 0 && (
-                      <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">{isDataLoading ? "Loading..." : "No tithes found"}</td></tr>
+                      <tr>
+                        <td colSpan={4}>
+                          {isDataLoading ? (
+                            <PageSpinner />
+                          ) : (
+                            <EmptyState
+                              icon={DollarSign}
+                              title="No tithes found"
+                              description="Record a tithe to see it listed here."
+                              actionLabel="Record Transaction"
+                              onAction={() => setDialogOpen(true)}
+                            />
+                          )}
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
@@ -359,7 +385,21 @@ export default function FinancePage() {
                       </tr>
                     ))}
                     {offerings.length === 0 && (
-                      <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">{isDataLoading ? "Loading..." : "No offerings found"}</td></tr>
+                      <tr>
+                        <td colSpan={4}>
+                          {isDataLoading ? (
+                            <PageSpinner />
+                          ) : (
+                            <EmptyState
+                              icon={DollarSign}
+                              title="No offerings found"
+                              description="Record an offering to see it listed here."
+                              actionLabel="Record Transaction"
+                              onAction={() => setDialogOpen(true)}
+                            />
+                          )}
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
@@ -399,7 +439,21 @@ export default function FinancePage() {
                       </tr>
                     ))}
                     {expenses.length === 0 && (
-                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">{isDataLoading ? "Loading..." : "No expenses found"}</td></tr>
+                      <tr>
+                        <td colSpan={5}>
+                          {isDataLoading ? (
+                            <PageSpinner />
+                          ) : (
+                            <EmptyState
+                              icon={DollarSign}
+                              title="No expenses found"
+                              description="Record an expense to see it listed here."
+                              actionLabel="Record Transaction"
+                              onAction={() => setDialogOpen(true)}
+                            />
+                          )}
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
