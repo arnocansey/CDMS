@@ -25,15 +25,17 @@ public class DepartmentService {
         this.memberRepository = memberRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<DepartmentDto> getAllDepartments() {
         Long churchId = TenantContext.requireChurchId();
-        return departmentRepository.findByChurchId(churchId).stream()
+        return departmentRepository.findByChurchIdWithLeader(churchId).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public DepartmentDto getDepartmentById(Long id) {
-        Department department = departmentRepository.findById(id)
+        Department department = departmentRepository.findByIdWithLeader(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", id));
         Long churchId = TenantContext.getChurchId();
         if (churchId != null && !department.getChurchId().equals(churchId)) {
@@ -67,12 +69,12 @@ public class DepartmentService {
         }
 
         Department savedDepartment = departmentRepository.save(department);
-        return mapToDto(savedDepartment);
+        return mapToDto(departmentRepository.findByIdWithLeader(savedDepartment.getId()).orElse(savedDepartment));
     }
 
     @Transactional
     public DepartmentDto updateDepartment(Long id, DepartmentDto departmentDto) {
-        Department department = departmentRepository.findById(id)
+        Department department = departmentRepository.findByIdWithLeader(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", id));
         Long churchId = TenantContext.getChurchId();
         if (churchId != null && !department.getChurchId().equals(churchId)) {
@@ -98,10 +100,12 @@ public class DepartmentService {
             Member leader = memberRepository.findById(departmentDto.getLeaderId())
                     .orElseThrow(() -> new ResourceNotFoundException("Member", departmentDto.getLeaderId()));
             department.setLeader(leader);
+        } else {
+            department.setLeader(null);
         }
 
         Department updatedDepartment = departmentRepository.save(department);
-        return mapToDto(updatedDepartment);
+        return mapToDto(departmentRepository.findByIdWithLeader(updatedDepartment.getId()).orElse(updatedDepartment));
     }
 
     @Transactional

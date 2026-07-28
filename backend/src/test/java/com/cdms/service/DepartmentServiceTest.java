@@ -65,7 +65,7 @@ class DepartmentServiceTest {
 
     @Test
     void getAllDepartments_Success() {
-        when(departmentRepository.findByChurchId(1L)).thenReturn(Arrays.asList(department));
+        when(departmentRepository.findByChurchIdWithLeader(1L)).thenReturn(Arrays.asList(department));
 
         List<DepartmentDto> result = departmentService.getAllDepartments();
 
@@ -84,7 +84,7 @@ class DepartmentServiceTest {
 
     @Test
     void getDepartmentById_Success() {
-        when(departmentRepository.findById(1L)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByIdWithLeader(1L)).thenReturn(Optional.of(department));
 
         DepartmentDto result = departmentService.getDepartmentById(1L);
 
@@ -94,7 +94,7 @@ class DepartmentServiceTest {
 
     @Test
     void getDepartmentById_NotFound_ThrowsException() {
-        when(departmentRepository.findById(999L)).thenReturn(Optional.empty());
+        when(departmentRepository.findByIdWithLeader(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> departmentService.getDepartmentById(999L))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -106,6 +106,7 @@ class DepartmentServiceTest {
         when(departmentRepository.existsByNameAndChurchId("Youth Department", 1L)).thenReturn(false);
         when(memberRepository.findById(1L)).thenReturn(Optional.of(leader));
         when(departmentRepository.save(any(Department.class))).thenReturn(department);
+        when(departmentRepository.findByIdWithLeader(1L)).thenReturn(Optional.of(department));
 
         DepartmentDto dto = new DepartmentDto();
         dto.setName("Youth Department");
@@ -134,7 +135,7 @@ class DepartmentServiceTest {
 
     @Test
     void updateDepartment_Success() {
-        when(departmentRepository.findById(1L)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByIdWithLeader(1L)).thenReturn(Optional.of(department));
         when(departmentRepository.save(any(Department.class))).thenReturn(department);
 
         DepartmentDto dto = new DepartmentDto();
@@ -149,7 +150,7 @@ class DepartmentServiceTest {
 
     @Test
     void updateDepartment_NotFound_ThrowsException() {
-        when(departmentRepository.findById(999L)).thenReturn(Optional.empty());
+        when(departmentRepository.findByIdWithLeader(999L)).thenReturn(Optional.empty());
 
         DepartmentDto dto = new DepartmentDto();
         dto.setName("Updated");
