@@ -161,6 +161,7 @@ public class PledgeService {
         }
 
         PledgePayment payment = new PledgePayment();
+        payment.setChurchId(pledge.getChurchId() != null ? pledge.getChurchId() : TenantContext.requireChurchId());
         payment.setPledge(pledge);
         payment.setAmount(dto.getAmount());
         payment.setPaymentDate(dto.getPaymentDate() != null ? dto.getPaymentDate() : LocalDate.now());

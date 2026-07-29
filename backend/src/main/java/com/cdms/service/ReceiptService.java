@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.cdms.exception.ResourceNotFoundException;
 import com.cdms.repository.MemberRepository;
 import com.cdms.repository.ReceiptRepository;
+import com.cdms.security.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,7 @@ public class ReceiptService {
     @Transactional
     public ReceiptDto generateReceipt(ReceiptDto dto) {
         Receipt receipt = new Receipt();
+        receipt.setChurchId(TenantContext.requireChurchId());
         receipt.setReceiptNumber("REC-" + System.currentTimeMillis());
         receipt.setAmount(dto.getAmount());
         receipt.setReceiptDate(dto.getReceiptDate() != null ? dto.getReceiptDate() : LocalDate.now());

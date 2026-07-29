@@ -133,6 +133,7 @@ public class FinancialGoalService {
         }
 
         GoalContribution contribution = new GoalContribution();
+        contribution.setChurchId(goal.getChurchId() != null ? goal.getChurchId() : TenantContext.requireChurchId());
         contribution.setGoal(goal);
         contribution.setAmount(dto.getAmount());
         contribution.setContributionDate(dto.getContributionDate() != null ? dto.getContributionDate() : LocalDate.now());

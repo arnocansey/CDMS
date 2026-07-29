@@ -157,6 +157,7 @@ public class FundService {
         }
 
         FundTransaction transaction = new FundTransaction();
+        transaction.setChurchId(fund.getChurchId() != null ? fund.getChurchId() : TenantContext.requireChurchId());
         transaction.setFund(fund);
         transaction.setTransactionType(dto.getTransactionType());
         transaction.setAmount(dto.getAmount());
