@@ -92,7 +92,7 @@ export default function DashboardScreen({ navigation }: any) {
             </View>
             <View style={styles.textContainer}>
               <Text style={styles.greeting}>Hello, {user?.firstName}!</Text>
-              <Text style={styles.subtitle}>Grace Community Church</Text>
+              <Text style={styles.subtitle}>{user?.churchName || 'Your Church'}</Text>
             </View>
           </View>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton} activeOpacity={0.7}>

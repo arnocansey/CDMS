@@ -157,7 +157,7 @@ public class AuthService {
     }
 
     public UserDto getCurrentUser(String email) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailWithDetails(email)
                 .orElseThrow(() -> new BadRequestException("User not found"));
         return mapToUserDto(user);
     }
@@ -198,6 +198,10 @@ public class AuthService {
                     return name.startsWith("ROLE_") ? name.substring(5) : name;
                 })
                 .collect(Collectors.toList()));
+        if (user.getChurch() != null) {
+            dto.setChurchId(user.getChurch().getId());
+            dto.setChurchName(user.getChurch().getName());
+        }
         return dto;
     }
 }

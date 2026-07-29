@@ -24,7 +24,6 @@ export function LandingFooter() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#features" className="hover:text-foreground">Features</a></li>
               <li><a href="#how-it-works" className="hover:text-foreground">How It Works</a></li>
-              <li><a href="#testimonials" className="hover:text-foreground">Testimonials</a></li>
             </ul>
           </div>
 
@@ -46,7 +45,7 @@ export function LandingFooter() {
         </div>
 
         <div className="mt-8 border-t pt-6 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} {branding.churchName}. All rights reserved.
+          &copy; {new Date().getFullYear()} {branding.shortName}. All rights reserved.
         </div>
       </div>
     </footer>

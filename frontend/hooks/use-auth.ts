@@ -11,6 +11,8 @@ interface User {
   lastName: string;
   roles: string[];
   accountStatus?: "PENDING" | "APPROVED" | "REJECTED";
+  churchId?: number | null;
+  churchName?: string | null;
 }
 
 interface AuthState {

@@ -8,6 +8,8 @@ interface User {
   firstName: string;
   lastName: string;
   roles: string[];
+  churchId?: number | null;
+  churchName?: string | null;
 }
 
 interface AuthContextType {

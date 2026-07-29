@@ -51,45 +51,15 @@ export default function ChurchComparisonPage() {
         api.get("/admin/church-comparison/health-scores"),
       ]);
       setOverview(overviewRes.data);
-      setTopGiving(givingRes.data ?? []);
-      setHealthScores(healthRes.data ?? []);
-
-      setTopGrowth([
-        { name: "Grace Church", growth: 24.5 },
-        { name: "New Life Fellowship", growth: 18.2 },
-        { name: "City Harvest", growth: 15.8 },
-        { name: "Faith Community", growth: 12.3 },
-        { name: "Cornerstone Church", growth: 10.1 },
-      ]);
+      setTopGiving(Array.isArray(givingRes.data) ? givingRes.data : []);
+      setHealthScores(Array.isArray(healthRes.data) ? healthRes.data : []);
+      setTopGrowth([]);
     } catch {
-      setOverview({
-        totalChurches: 48,
-        totalMembers: 12500,
-        totalGiving: 2450000,
-        totalExpenses: 1890000,
-      });
-      setTopGiving([
-        { name: "Mega Church Downtown", giving: 485000 },
-        { name: "Grace Community", giving: 312000 },
-        { name: "Faith Tabernacle", giving: 278000 },
-        { name: "New Hope Church", giving: 245000 },
-        { name: "Lighthouse Ministry", giving: 198000 },
-      ]);
-      setTopGrowth([
-        { name: "Grace Church", growth: 24.5 },
-        { name: "New Life Fellowship", growth: 18.2 },
-        { name: "City Harvest", growth: 15.8 },
-        { name: "Faith Community", growth: 12.3 },
-        { name: "Cornerstone Church", growth: 10.1 },
-      ]);
-      setHealthScores([
-        { id: 1, name: "Grace Community", score: 92, retention: 88, giving: 95, attendance: 91 },
-        { id: 2, name: "Faith Tabernacle", score: 87, retention: 85, giving: 90, attendance: 86 },
-        { id: 3, name: "New Hope Church", score: 81, retention: 78, giving: 84, attendance: 82 },
-        { id: 4, name: "Cornerstone Church", score: 76, retention: 72, giving: 80, attendance: 75 },
-        { id: 5, name: "Lighthouse Ministry", score: 71, retention: 68, giving: 75, attendance: 70 },
-        { id: 6, name: "City Harvest", score: 65, retention: 60, giving: 70, attendance: 64 },
-      ]);
+      toast.error("Failed to load church comparison data");
+      setOverview(null);
+      setTopGiving([]);
+      setTopGrowth([]);
+      setHealthScores([]);
     } finally {
       setLoading(false);
     }
@@ -110,10 +80,8 @@ export default function ChurchComparisonPage() {
       const res = await api.get(`/admin/church-comparison/compare?ids=${selectedChurches.join(",")}`);
       setComparisonData(res.data ?? []);
     } catch {
-      setComparisonData(selectedChurches.map((id) => {
-        const h = healthScores.find((s) => s.id === id);
-        return { churchId: id, name: h?.name || `Church ${id}`, members: Math.floor(Math.random() * 500) + 100, giving: Math.floor(Math.random() * 300000) + 50000, expenses: Math.floor(Math.random() * 200000) + 30000, retention: h?.retention ?? 75 };
-      }));
+      toast.error("Failed to load comparison");
+      setComparisonData([]);
     }
   };
 
@@ -275,6 +243,9 @@ export default function ChurchComparisonPage() {
             <CardDescription>Highest total donations on the platform</CardDescription>
           </CardHeader>
           <CardContent>
+            {topGiving.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-12 text-center">No giving data yet.</p>
+            ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={topGiving} layout="vertical" margin={{ left: 100 }}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -284,9 +255,11 @@ export default function ChurchComparisonPage() {
                 <Bar dataKey="giving" fill="#3b82f6" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
+        {topGrowth.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Top Churches by Growth</CardTitle>
@@ -304,6 +277,7 @@ export default function ChurchComparisonPage() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+        )}
       </div>
 
       <Card>
@@ -312,6 +286,9 @@ export default function ChurchComparisonPage() {
           <CardDescription>Overall church health based on key metrics</CardDescription>
         </CardHeader>
         <CardContent>
+          {healthScores.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">No health scores available.</p>
+          ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {healthScores.map((church) => (
               <div key={church.id} className="rounded-lg border p-4 space-y-3">
@@ -347,6 +324,7 @@ export default function ChurchComparisonPage() {
               </div>
             ))}
           </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -30,6 +30,7 @@ describe("Header Component", () => {
     firstName: "John",
     lastName: "Doe",
     roles: ["Administrator"],
+    churchName: "Test Church",
   };
   const mockLogout = jest.fn();
 
@@ -48,7 +49,7 @@ describe("Header Component", () => {
 
   it("renders church title", () => {
     render(<Header />);
-    expect(screen.getByText("Grace Community Church")).toBeInTheDocument();
+    expect(screen.getByText("Test Church")).toBeInTheDocument();
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
 

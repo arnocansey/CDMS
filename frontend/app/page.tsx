@@ -18,7 +18,6 @@ import {
   Building2,
   ArrowRight,
   CheckCircle2,
-  Star,
 } from "lucide-react";
 
 const features = [
@@ -78,27 +77,6 @@ const steps = [
     title: "Grow Together",
     description:
       "Use insights and tools to strengthen your community and streamline operations.",
-  },
-];
-
-const testimonials = [
-  {
-    quote:
-      "CDMS has transformed how we manage our congregation. Everything is organized and accessible.",
-    name: "Pastor James Mitchell",
-    role: "Senior Pastor, Grace Community Church",
-  },
-  {
-    quote:
-      "The financial reporting alone saves us hours every month. Highly recommend for any church.",
-    name: "Sarah Thompson",
-    role: "Church Administrator",
-  },
-  {
-    quote:
-      "Our members love the prayer request feature. It keeps our community connected and caring.",
-    name: "Deacon Robert Williams",
-    role: "Ministry Leader, New Hope Fellowship",
   },
 ];
 
@@ -228,44 +206,6 @@ export default function LandingPage() {
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     {step.description}
                   </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials */}
-        <section id="testimonials" className="py-24">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Trusted by Churches Everywhere
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                See what church leaders are saying about CDMS.
-              </p>
-            </div>
-            <div className="mt-16 grid gap-8 md:grid-cols-3">
-              {testimonials.map((t) => (
-                <div
-                  key={t.name}
-                  className="rounded-xl border bg-card p-6 shadow-sm"
-                >
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="h-4 w-4 fill-primary text-primary"
-                      />
-                    ))}
-                  </div>
-                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-                  <div className="mt-6">
-                    <p className="text-sm font-semibold">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.role}</p>
-                  </div>
                 </div>
               ))}
             </div>

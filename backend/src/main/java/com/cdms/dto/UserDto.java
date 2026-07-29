@@ -12,6 +12,8 @@ public class UserDto {
     private String accountStatus;
     private List<String> roles;
     private LocalDateTime createdAt;
+    private Long churchId;
+    private String churchName;
 
     public UserDto() {}
 
@@ -41,4 +43,8 @@ public class UserDto {
     public void setRoles(List<String> roles) { this.roles = roles; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Long getChurchId() { return churchId; }
+    public void setChurchId(Long churchId) { this.churchId = churchId; }
+    public String getChurchName() { return churchName; }
+    public void setChurchName(String churchName) { this.churchName = churchName; }
 }

@@ -63,7 +63,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
         </Button>
         <div className="hidden sm:block">
           <h1 className="text-lg font-semibold leading-tight">
-            {branding.churchName}
+            {user?.churchName || branding.shortName}
           </h1>
           <p className="text-xs text-muted-foreground">Dashboard</p>
         </div>

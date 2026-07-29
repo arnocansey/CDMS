@@ -176,7 +176,7 @@ export default function ChurchRegistrationPage() {
                   <Label htmlFor="churchName" className="text-sm font-medium">Church Name</Label>
                   <div className="relative">
                     <Church className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input id="churchName" placeholder="Grace Community Church" className="h-11 pl-10" {...register("churchName")} />
+                    <Input id="churchName" placeholder="Your Church Name" className="h-11 pl-10" {...register("churchName")} />
                   </div>
                   {errors.churchName && <p className="text-sm text-destructive">{errors.churchName.message}</p>}
                 </div>
@@ -187,7 +187,7 @@ export default function ChurchRegistrationPage() {
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">cdms.app/</span>
                     <Input
                       id="churchSlug"
-                      placeholder="grace-community-church"
+                      placeholder="your-church-slug"
                       className="h-11 pl-[72px]"
                       {...churchSlugRegister}
                       onChange={(e) => {
@@ -208,7 +208,7 @@ export default function ChurchRegistrationPage() {
                   <Label htmlFor="email" className="text-sm font-medium">Church Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input id="email" type="email" placeholder="office@gracechurch.org" className="h-11 pl-10" {...register("email")} />
+                    <Input id="email" type="email" placeholder="office@yourchurch.org" className="h-11 pl-10" {...register("email")} />
                   </div>
                   {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                 </div>
@@ -216,11 +216,11 @@ export default function ChurchRegistrationPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city" className="text-sm font-medium">City</Label>
-                    <Input id="city" placeholder="Springfield" className="h-11" {...register("city")} />
+                    <Input id="city" placeholder="City" className="h-11" {...register("city")} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state" className="text-sm font-medium">State</Label>
-                    <Input id="state" placeholder="IL" className="h-11" {...register("state")} />
+                    <Input id="state" placeholder="State" className="h-11" {...register("state")} />
                   </div>
                 </div>
 

@@ -57,17 +57,6 @@ export function LandingNavbar({ variant = "default" }: LandingNavbarProps) {
           >
             How It Works
           </a>
-          <a
-            href="#testimonials"
-            className={cn(
-              "text-sm font-medium transition-colors",
-              isHero
-                ? "text-white/75 hover:text-white"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Testimonials
-          </a>
         </nav>
 
         <div className="flex items-center gap-3">

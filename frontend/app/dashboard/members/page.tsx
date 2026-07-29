@@ -464,7 +464,7 @@ export default function MembersPage() {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="city">City</Label>
-                <Input id="city" placeholder="Springfield" {...register("city")} />
+                <Input id="city" placeholder="City" {...register("city")} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="state">State</Label>
