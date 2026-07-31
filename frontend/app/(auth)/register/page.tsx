@@ -18,6 +18,7 @@ import {
   Eye, EyeOff, Church, ArrowRight, Mail, Lock, User, Check, X, Search, ChevronRight,
 } from "lucide-react";
 import { AuthBrandPanel } from "@/components/layout/auth-brand-panel";
+import { LandingLoader } from "@/components/layout/landing-loader";
 import { siteImages } from "@/lib/site-images";
 
 interface ChurchSearchResult {
@@ -249,9 +250,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 {searching && (
-                  <div className="flex justify-center py-4">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  </div>
+                  <LandingLoader variant="inline" label="Searching churches" />
                 )}
                 {!searching && churchResults.length > 0 && (
                   <div className="space-y-2">
@@ -431,7 +430,7 @@ export default function RegisterPage() {
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      <LandingLoader variant="button" label="Creating account" />
                       Creating account...
                     </div>
                   ) : (

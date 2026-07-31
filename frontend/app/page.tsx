@@ -8,6 +8,7 @@ import { siteImages } from "@/lib/site-images";
 import { LandingNavbar } from "@/components/layout/landing-navbar";
 import { LandingFooter } from "@/components/layout/landing-footer";
 import { BackgroundImage } from "@/components/layout/background-image";
+import { LandingLoader } from "@/components/layout/landing-loader";
 import { Button } from "@/components/ui/button";
 import {
   Users,
@@ -81,7 +82,11 @@ const steps = [
 ];
 
 export default function LandingPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LandingLoader label="Loading CDMS…" />;
+  }
 
   return (
     <div className="flex min-h-screen flex-col">

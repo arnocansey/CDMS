@@ -15,6 +15,7 @@ import { z } from "zod";
 import { Church, ArrowLeft, ArrowRight, Mail, Lock, User, Check, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
 import { AuthBrandPanel } from "@/components/layout/auth-brand-panel";
+import { LandingLoader } from "@/components/layout/landing-loader";
 import { siteImages } from "@/lib/site-images";
 
 const churchRegistrationSchema = z.object({
@@ -265,7 +266,14 @@ export default function ChurchRegistrationPage() {
                     <div className="flex items-center gap-2"><ArrowLeft className="h-4 w-4" /> Back</div>
                   </Button>
                   <Button type="submit" className="h-11 flex-1" disabled={isSubmitting}>
-                    {isSubmitting ? "Creating..." : "Create Church"}
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <LandingLoader variant="button" label="Creating church" />
+                        Creating...
+                      </span>
+                    ) : (
+                      "Create Church"
+                    )}
                   </Button>
                 </div>
               </>

@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { Eye, EyeOff, Church, ArrowRight, Mail, Lock, CheckCircle } from "lucide-react";
 import { AuthBrandPanel } from "@/components/layout/auth-brand-panel";
+import { LandingLoader } from "@/components/layout/landing-loader";
 import { siteImages } from "@/lib/site-images";
 
 const productBullets = [
@@ -165,7 +166,7 @@ export default function LoginPage() {
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <LandingLoader variant="button" label="Signing in" />
                   Signing in...
                 </div>
               ) : (

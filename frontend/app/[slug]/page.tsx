@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { siteImages } from "@/lib/site-images";
 import { BackgroundImage } from "@/components/layout/background-image";
+import { LandingLoader } from "@/components/layout/landing-loader";
 import {
   Church,
   MapPin,
@@ -77,11 +78,7 @@ export default function ChurchPublicPage() {
   }, [slug]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <LandingLoader label="Loading church…" />;
   }
 
   if (error || !data) {

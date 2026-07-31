@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Church, ArrowLeft, Mail, Send, CheckCircle2 } from "lucide-react";
 import api from "@/lib/api";
 import { AuthBrandPanel } from "@/components/layout/auth-brand-panel";
+import { LandingLoader } from "@/components/layout/landing-loader";
 import { siteImages } from "@/lib/site-images";
 
 const forgotPasswordSchema = z.object({
@@ -118,7 +119,7 @@ export default function ForgotPasswordPage() {
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      <LandingLoader variant="button" label="Sending" />
                       Sending...
                     </div>
                   ) : (

@@ -121,3 +121,93 @@
 .animate-ken-burns {
   animation: ken-burns 18s ease-out forwards;
 }
+
+/* Landing / public branded loader (steeple bars + soft pulse — not a circle spinner) */
+@keyframes landing-loader-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes landing-loader-ring {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes landing-loader-bar {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scaleY(0.45);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.landing-loader-mark {
+  animation: landing-loader-pulse 1.6s ease-in-out infinite;
+}
+
+.landing-loader-ring {
+  animation: landing-loader-ring 1.6s ease-in-out infinite;
+}
+
+.landing-loader-ring-delayed {
+  animation: landing-loader-ring 1.6s ease-in-out 0.25s infinite;
+}
+
+.landing-loader-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 18px;
+}
+
+.landing-loader-bars i {
+  display: block;
+  width: 4px;
+  height: 100%;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: bottom center;
+  animation: landing-loader-bar 0.9s ease-in-out infinite;
+}
+
+.landing-loader-bars i:nth-child(1) {
+  animation-delay: 0ms;
+  height: 55%;
+}
+
+.landing-loader-bars i:nth-child(2) {
+  animation-delay: 120ms;
+  height: 100%;
+}
+
+.landing-loader-bars i:nth-child(3) {
+  animation-delay: 240ms;
+  height: 70%;
+}
+
+.landing-loader-bars--sm {
+  height: 14px;
+  gap: 3px;
+}
+
+.landing-loader-bars--sm i {
+  width: 3px;
+}
