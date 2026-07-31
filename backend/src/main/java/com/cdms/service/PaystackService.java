@@ -16,11 +16,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -55,44 +59,52 @@ public class PaystackService {
     }
 
     @Transactional
-    public Map<String, Object> initializeTransaction(Long churchId, Long userId, Long planId, String billingCycle) {
+    public Map<String, Object> initializeTransaction(Long churchId, Long userId, Long planId,
+                                                     String billingCycle, String payerEmail) {
+        ensurePaystackConfigured();
+
         Church church = churchRepository.findById(churchId)
                 .orElseThrow(() -> new BadRequestException("Church not found"));
 
         SubscriptionPlan plan = subscriptionPlanRepository.findById(planId)
                 .orElseThrow(() -> new BadRequestException("Plan not found"));
 
-        if ("Free".equals(plan.getName())) {
+        if ("Free".equalsIgnoreCase(plan.getName())) {
             throw new BadRequestException("Cannot initialize payment for Free plan");
         }
 
-        BigDecimal amount = "ANNUAL".equals(billingCycle) ? plan.getPriceAnnual() : plan.getPriceMonthly();
-        String currency = church.getCurrency() != null ? church.getCurrency() : "NGN";
+        BigDecimal amount = "ANNUAL".equalsIgnoreCase(billingCycle) ? plan.getPriceAnnual() : plan.getPriceMonthly();
+        String currency = resolveCurrency(church);
 
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Invalid plan amount");
         }
 
+        String email = resolvePayerEmail(church, payerEmail);
         String reference = "CDMS-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase();
+        long amountMinorUnits = amount.multiply(BigDecimal.valueOf(100))
+                .setScale(0, RoundingMode.HALF_UP)
+                .longValueExact();
 
         PaymentTransaction transaction = new PaymentTransaction(churchId, userId, planId, amount, currency, billingCycle);
         transaction.setPaystackReference(reference);
         paymentTransactionRepository.save(transaction);
 
         try {
-            Map<String, Object> body = Map.of(
-                    "email", church.getEmail(),
-                    "amount", amount.multiply(BigDecimal.valueOf(100)).longValue(),
-                    "reference", reference,
-                    "callback_url", paystackConfig.getCallbackUrl(),
-                    "metadata", Map.of(
-                            "church_id", churchId,
-                            "plan_id", planId,
-                            "plan_name", plan.getName(),
-                            "billing_cycle", billingCycle,
-                            "church_name", church.getName()
-                    )
-            );
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("church_id", churchId);
+            metadata.put("plan_id", planId);
+            metadata.put("plan_name", plan.getName());
+            metadata.put("billing_cycle", billingCycle);
+            metadata.put("church_name", church.getName());
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("email", email);
+            body.put("amount", amountMinorUnits);
+            body.put("currency", currency);
+            body.put("reference", reference);
+            body.put("callback_url", paystackConfig.getCallbackUrl());
+            body.put("metadata", metadata);
 
             JsonNode response = webClient.post()
                     .uri("/transaction/initialize")
@@ -101,27 +113,40 @@ public class PaystackService {
                     .bodyToMono(JsonNode.class)
                     .block();
 
-            if (response != null && response.get("status").asBoolean()) {
+            if (response != null && response.path("status").asBoolean(false)) {
                 JsonNode data = response.get("data");
                 transaction.setPaystackAccessCode(data.get("access_code").asText());
                 paymentTransactionRepository.save(transaction);
 
-                return Map.of(
-                        "status", true,
-                        "authorization_url", data.get("authorization_url").asText(),
-                        "access_code", data.get("access_code").asText(),
-                        "reference", reference
-                );
-            } else {
-                String message = response != null ? response.get("message").asText() : "Unknown error";
-                throw new BadRequestException("Paystack initialization failed: " + message);
+                Map<String, Object> result = new HashMap<>();
+                result.put("status", true);
+                result.put("authorization_url", data.get("authorization_url").asText());
+                result.put("access_code", data.get("access_code").asText());
+                result.put("reference", reference);
+                result.put("amount", amountMinorUnits);
+                result.put("currency", currency);
+                result.put("email", email);
+                return result;
             }
+
+            String message = response != null ? response.path("message").asText("Unknown error") : "Unknown error";
+            throw new BadRequestException("Paystack initialization failed: " + message);
         } catch (BadRequestException e) {
             throw e;
+        } catch (WebClientResponseException e) {
+            log.error("Paystack HTTP error: status={} body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new BadRequestException(parsePaystackError(e));
         } catch (Exception e) {
             log.error("Paystack initialization error", e);
-            throw new BadRequestException("Payment initialization failed: " + e.getMessage());
+            throw new BadRequestException("Payment initialization failed: " +
+                    (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
         }
+    }
+
+    /** @deprecated use overload with payerEmail */
+    @Transactional
+    public Map<String, Object> initializeTransaction(Long churchId, Long userId, Long planId, String billingCycle) {
+        return initializeTransaction(churchId, userId, planId, billingCycle, null);
     }
 
     @Transactional
@@ -139,12 +164,12 @@ public class PaystackService {
 
         try {
             JsonNode response = webClient.get()
-                    .uri("/transaction/{reference}", reference)
+                    .uri("/transaction/verify/{reference}", reference)
                     .retrieve()
                     .bodyToMono(JsonNode.class)
                     .block();
 
-            if (response != null && response.get("status").asBoolean()) {
+            if (response != null && response.path("status").asBoolean(false)) {
                 JsonNode data = response.get("data");
                 String paystackStatus = data.get("status").asText();
 
@@ -181,6 +206,9 @@ public class PaystackService {
             }
         } catch (BadRequestException e) {
             throw e;
+        } catch (WebClientResponseException e) {
+            log.error("Paystack verify HTTP error: status={} body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new BadRequestException(parsePaystackError(e));
         } catch (Exception e) {
             log.error("Paystack verification error", e);
             throw new BadRequestException("Verification failed: " + e.getMessage());
@@ -305,7 +333,7 @@ public class PaystackService {
     }
 
     public String getPublicKey() {
-        return paystackConfig.getPublicKey();
+        return paystackConfig.getPublicKey() != null ? paystackConfig.getPublicKey() : "";
     }
 
     @Transactional(readOnly = true)
@@ -316,5 +344,47 @@ public class PaystackService {
     @Transactional(readOnly = true)
     public Optional<PaymentTransaction> getTransactionByReference(String reference) {
         return paymentTransactionRepository.findByPaystackReference(reference);
+    }
+
+    private void ensurePaystackConfigured() {
+        if (!StringUtils.hasText(paystackConfig.getSecretKey()) || !StringUtils.hasText(paystackConfig.getPublicKey())) {
+            throw new BadRequestException(
+                    "Payment provider is not configured. Set PAYSTACK_SECRET_KEY and PAYSTACK_PUBLIC_KEY on the server.");
+        }
+    }
+
+    private String resolvePayerEmail(Church church, String payerEmail) {
+        if (StringUtils.hasText(payerEmail)) {
+            return payerEmail.trim();
+        }
+        if (StringUtils.hasText(church.getEmail())) {
+            return church.getEmail().trim();
+        }
+        if (StringUtils.hasText(church.getEmailFromAddress())) {
+            return church.getEmailFromAddress().trim();
+        }
+        throw new BadRequestException(
+                "A billing email is required. Set your church email in Settings, or ensure your account email is valid.");
+    }
+
+    private String resolveCurrency(Church church) {
+        String currency = church.getCurrency();
+        if (!StringUtils.hasText(currency)) {
+            return "NGN";
+        }
+        return currency.trim().toUpperCase();
+    }
+
+    private String parsePaystackError(WebClientResponseException e) {
+        try {
+            JsonNode body = objectMapper.readTree(e.getResponseBodyAsString());
+            String message = body.path("message").asText(null);
+            if (StringUtils.hasText(message)) {
+                return "Paystack error: " + message;
+            }
+        } catch (Exception ignored) {
+            // fall through
+        }
+        return "Paystack request failed (" + e.getStatusCode().value() + "). Check API keys and currency support.";
     }
 }

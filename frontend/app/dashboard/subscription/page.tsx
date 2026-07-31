@@ -77,6 +77,37 @@ export default function SubscriptionPage() {
     fetchData();
   }, [fetchData]);
 
+  // Complete hosted Paystack checkout when redirected back with ?reference=
+  useEffect(() => {
+    if (!isAuthenticated || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const reference = params.get("reference") || params.get("trxref");
+    if (!reference) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        await subscriptionApi.verify(reference);
+        if (!cancelled) {
+          toast.success("Payment verified and subscription updated.");
+          await fetchData();
+          router.replace("/dashboard/subscription");
+        }
+      } catch (error: any) {
+        if (!cancelled) {
+          toast.error(
+            error.response?.data?.message ||
+              "Could not verify payment. Contact support if you were charged."
+          );
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, fetchData, router]);
+
   const loadPaymentHistory = async () => {
     try {
       const res = await subscriptionApi.getHistory();
@@ -104,25 +135,42 @@ export default function SubscriptionPage() {
 
     try {
       const res = await subscriptionApi.initialize(planId, billingCycle);
-      const { authorization_url, reference } = res.data;
+      const data = res.data || {};
+      const authorizationUrl = data.authorization_url as string | undefined;
+      const reference = data.reference as string | undefined;
+      const accessCode = data.access_code as string | undefined;
+      const amount = Number(data.amount || 0);
+      const currency = (data.currency as string) || "NGN";
+      const payEmail = (data.email as string) || email;
+
+      // Prefer hosted checkout — most reliable path after server-side initialize
+      if (authorizationUrl) {
+        window.location.href = authorizationUrl;
+        return;
+      }
 
       const PaystackPop = (window as any).PaystackPop;
       if (!PaystackPop?.setup) {
-        if (authorization_url) {
-          window.location.href = authorization_url;
-          return;
-        }
         toast.error("Payment checkout is unavailable. Please refresh and try again.");
         setPaying(null);
         return;
       }
 
       const publicKeyRes = await subscriptionApi.getPublicKey();
+      const publicKey = publicKeyRes.data?.publicKey;
+      if (!publicKey) {
+        toast.error("Payment public key is missing. Configure PAYSTACK_PUBLIC_KEY on the server.");
+        setPaying(null);
+        return;
+      }
+
       const handler = PaystackPop.setup({
-        key: publicKeyRes.data.publicKey,
-        email,
-        amount: 0,
+        key: publicKey,
+        email: payEmail,
+        amount,
+        currency,
         ref: reference,
+        access_code: accessCode,
         onClose: () => {
           setPaying(null);
           toast.info("Payment cancelled");
@@ -133,7 +181,10 @@ export default function SubscriptionPage() {
             toast.success(`Successfully upgraded to ${planName}!`);
             fetchData();
           } catch (error: any) {
-            toast.error(error.response?.data?.message || "Payment verification failed. Contact support if you were charged.");
+            toast.error(
+              error.response?.data?.message ||
+                "Payment verification failed. Contact support if you were charged."
+            );
           } finally {
             setPaying(null);
           }
@@ -141,7 +192,12 @@ export default function SubscriptionPage() {
       });
       handler.openIframe();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to initialize payment. Please try again.");
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to initialize payment. Please try again.";
+      toast.error(message);
       setPaying(null);
     }
   };

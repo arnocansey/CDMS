@@ -48,12 +48,13 @@ public class SubscriptionController {
     @PostMapping("/initialize")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> initializePayment(@RequestBody Map<String, Object> request) {
-        Long churchId = TenantContext.requireChurchId();
-        Long userId = resolveCurrentUserId();
+        User user = requireCurrentUser();
+        Long churchId = resolveChurchId(user);
         Long planId = Long.valueOf(request.get("planId").toString());
         String billingCycle = request.getOrDefault("billingCycle", "MONTHLY").toString();
 
-        Map<String, Object> result = paystackService.initializeTransaction(churchId, userId, planId, billingCycle);
+        Map<String, Object> result = paystackService.initializeTransaction(
+                churchId, user.getId(), planId, billingCycle, user.getEmail());
         return ResponseEntity.ok(result);
     }
 
@@ -67,7 +68,8 @@ public class SubscriptionController {
     @GetMapping("/history")
     @PreAuthorize("hasAnyRole('ADMIN', 'TREASURER')")
     public ResponseEntity<List<PaymentTransaction>> getPaymentHistory() {
-        Long churchId = TenantContext.requireChurchId();
+        User user = requireCurrentUser();
+        Long churchId = resolveChurchId(user);
         return ResponseEntity.ok(paystackService.getPaymentHistory(churchId));
     }
 
@@ -78,21 +80,31 @@ public class SubscriptionController {
 
     @PostMapping("/webhooks/paystack")
     public ResponseEntity<String> handleWebhook(@RequestBody JsonNode payload,
-                                                 @RequestHeader("X-Paystack-Signature") String signature) {
+                                                 @RequestHeader(value = "X-Paystack-Signature", required = false) String signature) {
         String eventType = payload.has("event") ? payload.get("event").asText() : "unknown";
-
         paystackService.handleWebhookEvent(eventType, payload);
-
         return ResponseEntity.ok("OK");
     }
 
-    private Long resolveCurrentUserId() {
+    private User requireCurrentUser() {
         String email = SecurityUtils.getCurrentUserEmail();
         if (email == null || email.isBlank()) {
             throw new BadRequestException("Not authenticated");
         }
-        return userRepository.findByEmail(email)
-                .map(User::getId)
+        return userRepository.findByEmailWithDetails(email)
+                .or(() -> userRepository.findByEmail(email))
                 .orElseThrow(() -> new BadRequestException("User not found"));
+    }
+
+    private Long resolveChurchId(User user) {
+        Long churchId = TenantContext.getChurchId();
+        if (churchId == null) {
+            churchId = user.getChurchId();
+        }
+        if (churchId == null) {
+            throw new BadRequestException("No church associated with your account. Re-login or contact support.");
+        }
+        TenantContext.setChurchId(churchId);
+        return churchId;
     }
 }
