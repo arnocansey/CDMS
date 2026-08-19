@@ -207,12 +207,15 @@ public class FinancialService {
                     if (updatedSpent.compareTo(budget.getAmount()) > 0) {
                         List<User> adminTreasurers = userRepository.findAll();
                         for (User u : adminTreasurers) {
-                            if (u.getRole() != null && (u.getRole().name().equals("ADMIN") || u.getRole().name().equals("TREASURER"))) {
+                            boolean isAdminOrTreasurer = u.getRoles() != null && u.getRoles().stream().anyMatch(r ->
+                                r.getName() == com.cdms.entity.Role.RoleName.ROLE_ADMIN || r.getName() == com.cdms.entity.Role.RoleName.ROLE_TREASURER
+                            );
+                            if (isAdminOrTreasurer) {
                                 notificationService.createNotification(
                                     churchId,
                                     u.getId(),
                                     "Budget Exceeded Alert: " + budget.getCategory(),
-                                    String.format("Expense of $%s pushed %s budget spent to $%s (Limit: $%s).",
+                                    String.format("Expense of GH₵ %s pushed %s budget spent to GH₵ %s (Limit: GH₵ %s).",
                                             savedExpense.getAmount(), budget.getCategory(), updatedSpent, budget.getAmount()),
                                     "BUDGET_EXCEEDED"
                                 );
@@ -221,12 +224,15 @@ public class FinancialService {
                     } else if (updatedSpent.compareTo(threshold) >= 0) {
                         List<User> adminTreasurers = userRepository.findAll();
                         for (User u : adminTreasurers) {
-                            if (u.getRole() != null && (u.getRole().name().equals("ADMIN") || u.getRole().name().equals("TREASURER"))) {
+                            boolean isAdminOrTreasurer = u.getRoles() != null && u.getRoles().stream().anyMatch(r ->
+                                r.getName() == com.cdms.entity.Role.RoleName.ROLE_ADMIN || r.getName() == com.cdms.entity.Role.RoleName.ROLE_TREASURER
+                            );
+                            if (isAdminOrTreasurer) {
                                 notificationService.createNotification(
                                     churchId,
                                     u.getId(),
                                     "Budget Warning Alert: " + budget.getCategory(),
-                                    String.format("%s budget has reached 90%% capacity ($%s spent of $%s).",
+                                    String.format("%s budget has reached 90%% capacity (GH₵ %s spent of GH₵ %s).",
                                             budget.getCategory(), updatedSpent, budget.getAmount()),
                                     "BUDGET_WARNING"
                                 );
