@@ -36,12 +36,13 @@ public class FinancialService {
     private final AuditLogService auditLogService;
     private final CashFlowEntryRepository cashFlowEntryRepository;
     private final BudgetRepository budgetRepository;
+    private final NotificationService notificationService;
 
     public FinancialService(DonationRepository donationRepository, TitheRepository titheRepository,
                            OfferingRepository offeringRepository, ExpenseRepository expenseRepository,
                            MemberRepository memberRepository, UserRepository userRepository,
                            AuditLogService auditLogService, CashFlowEntryRepository cashFlowEntryRepository,
-                           BudgetRepository budgetRepository) {
+                           BudgetRepository budgetRepository, NotificationService notificationService) {
         this.donationRepository = donationRepository;
         this.titheRepository = titheRepository;
         this.offeringRepository = offeringRepository;
@@ -51,6 +52,7 @@ public class FinancialService {
         this.auditLogService = auditLogService;
         this.cashFlowEntryRepository = cashFlowEntryRepository;
         this.budgetRepository = budgetRepository;
+        this.notificationService = notificationService;
     }
 
     public Page<DonationDto> getDonations(LocalDate startDate, LocalDate endDate, Pageable pageable) {
@@ -194,8 +196,44 @@ public class FinancialService {
         List<Budget> budgets = budgetRepository.findByCategory(savedExpense.getCategory());
         for (Budget budget : budgets) {
             if (budget.getPeriod() != null && isDateInPeriod(savedExpense.getExpenseDate(), budget.getPeriod())) {
-                budget.setSpent(budget.getSpent().add(savedExpense.getAmount()));
+                BigDecimal updatedSpent = budget.getSpent().add(savedExpense.getAmount());
+                budget.setSpent(updatedSpent);
                 budgetRepository.save(budget);
+
+                if (budget.getAmount() != null && budget.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal threshold = budget.getAmount().multiply(new BigDecimal("0.90"));
+                    Long churchId = TenantContext.getChurchId();
+                    
+                    if (updatedSpent.compareTo(budget.getAmount()) > 0) {
+                        List<User> adminTreasurers = userRepository.findAll();
+                        for (User u : adminTreasurers) {
+                            if (u.getRole() != null && (u.getRole().name().equals("ADMIN") || u.getRole().name().equals("TREASURER"))) {
+                                notificationService.createNotification(
+                                    churchId,
+                                    u.getId(),
+                                    "Budget Exceeded Alert: " + budget.getCategory(),
+                                    String.format("Expense of $%s pushed %s budget spent to $%s (Limit: $%s).",
+                                            savedExpense.getAmount(), budget.getCategory(), updatedSpent, budget.getAmount()),
+                                    "BUDGET_EXCEEDED"
+                                );
+                            }
+                        }
+                    } else if (updatedSpent.compareTo(threshold) >= 0) {
+                        List<User> adminTreasurers = userRepository.findAll();
+                        for (User u : adminTreasurers) {
+                            if (u.getRole() != null && (u.getRole().name().equals("ADMIN") || u.getRole().name().equals("TREASURER"))) {
+                                notificationService.createNotification(
+                                    churchId,
+                                    u.getId(),
+                                    "Budget Warning Alert: " + budget.getCategory(),
+                                    String.format("%s budget has reached 90%% capacity ($%s spent of $%s).",
+                                            budget.getCategory(), updatedSpent, budget.getAmount()),
+                                    "BUDGET_WARNING"
+                                );
+                            }
+                        }
+                    }
+                }
                 break;
             }
         }

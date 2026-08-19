@@ -120,4 +120,30 @@ public class ReportController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
+
+    @GetMapping("/tax-statement/member/{memberId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'SECRETARY', 'TREASURER')")
+    public ResponseEntity<byte[]> generateAnnualTaxStatement(
+            @PathVariable Long memberId,
+            @RequestParam(required = false) Integer year) {
+        int taxYear = year != null ? year : LocalDate.now().getYear();
+        MemberContributionHistoryDto history = financialService.getMemberContributionHistory(memberId);
+        
+        java.math.BigDecimal yearTotal = history.getContributions() != null ? history.getContributions().stream()
+                .filter(c -> c.getDate() != null && c.getDate().getYear() == taxYear)
+                .map(MemberContributionHistoryDto.ContributionItem::getAmount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add) : java.math.BigDecimal.ZERO;
+
+        byte[] pdf = receiptPdfService.generateAnnualTaxStatementPdf(
+                history.getMemberName(),
+                taxYear,
+                history.getContributions(),
+                yearTotal);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=tax-statement-" + taxYear + "-member-" + memberId + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
 }
+

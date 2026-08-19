@@ -150,6 +150,66 @@ public class PaystackService {
     }
 
     @Transactional
+    public Map<String, Object> initializeGivingTransaction(Long churchId, BigDecimal amount, String category, String payerEmail, String callbackUrl) {
+        ensurePaystackConfigured();
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Invalid giving amount");
+        }
+
+        Church church = churchId != null ? churchRepository.findById(churchId).orElse(null) : null;
+        String currency = church != null ? resolveCurrency(church) : "NGN";
+        String email = StringUtils.hasText(payerEmail) ? payerEmail.trim() : (church != null ? resolvePayerEmail(church, null) : "donor@church.com");
+        String reference = "GIVE-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase();
+
+        long amountMinorUnits = amount.multiply(BigDecimal.valueOf(100))
+                .setScale(0, RoundingMode.HALF_UP)
+                .longValueExact();
+
+        try {
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("church_id", churchId);
+            metadata.put("category", category);
+            metadata.put("type", "ONLINE_GIVING");
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("email", email);
+            body.put("amount", amountMinorUnits);
+            body.put("currency", currency);
+            body.put("reference", reference);
+            body.put("callback_url", StringUtils.hasText(callbackUrl) ? callbackUrl : paystackConfig.getCallbackUrl());
+            body.put("metadata", metadata);
+
+            JsonNode response = webClient.post()
+                    .uri("/transaction/initialize")
+                    .bodyValue(body)
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
+
+            if (response != null && response.path("status").asBoolean(false)) {
+                JsonNode data = response.get("data");
+                Map<String, Object> result = new HashMap<>();
+                result.put("status", true);
+                result.put("authorization_url", data.get("authorization_url").asText());
+                result.put("access_code", data.get("access_code").asText());
+                result.put("reference", reference);
+                result.put("amount", amount);
+                result.put("currency", currency);
+                return result;
+            }
+
+            String message = response != null ? response.path("message").asText("Unknown error") : "Unknown error";
+            throw new BadRequestException("Paystack initialization failed: " + message);
+        } catch (BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Paystack giving initialization error", e);
+            throw new BadRequestException("Giving payment initialization failed: " + e.getMessage());
+        }
+    }
+
+    @Transactional
     public Map<String, Object> verifyTransaction(String reference) {
         PaymentTransaction transaction = paymentTransactionRepository.findByPaystackReference(reference)
                 .orElseThrow(() -> new BadRequestException("Transaction not found with reference: " + reference));

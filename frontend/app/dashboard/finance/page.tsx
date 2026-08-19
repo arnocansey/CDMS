@@ -39,10 +39,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, TrendingDown, Wallet, Plus, Download } from "lucide-react";
+import { DollarSign, TrendingDown, Wallet, Plus, Download, CreditCard, Church, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { PageSpinner } from "@/components/page-spinner";
+import { PaystackGivingDialog } from "@/components/paystack-giving-dialog";
+import { SundayServiceDialog } from "@/components/sunday-service-dialog";
 
 type TransactionTab = "donation" | "tithe" | "offering" | "expense";
 type ListTab = "donations" | "tithes" | "offerings" | "expenses";
@@ -92,6 +94,11 @@ export default function FinancePage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [taxDialogOpen, setTaxDialogOpen] = useState(false);
+  const [givingDialogOpen, setGivingDialogOpen] = useState(false);
+  const [sundayDialogOpen, setSundayDialogOpen] = useState(false);
+  const [selectedTaxMember, setSelectedTaxMember] = useState("");
+  const [taxYear, setTaxYear] = useState(new Date().getFullYear().toString());
   const [activeTab, setActiveTab] = useState<TransactionTab>("donation");
   const [listTab, setListTab] = useState<ListTab>("donations");
   const [startDate, setStartDate] = useState("");
@@ -144,20 +151,31 @@ export default function FinancePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Finance</h2>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Church Finance</h2>
+          <p className="text-sm text-muted-foreground">Manage Sunday collections, tithes, MoMo giving, and church budgets.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="default" size="default" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold" onClick={() => setSundayDialogOpen(true)}>
+            <Church className="mr-2 h-4 w-4" />
+            Record Sunday Collection
+          </Button>
+          <Button variant="outline" size="sm" className="bg-amber-500/10 text-amber-700 border-amber-300 dark:text-amber-300 hover:bg-amber-500/20" onClick={() => setGivingDialogOpen(true)}>
+            <Smartphone className="mr-2 h-4 w-4" />
+            MoMo Online Giving
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setTaxDialogOpen(true)}>
+            <Download className="mr-2 h-4 w-4" />
+            Tax Statement
+          </Button>
           <Button variant="outline" size="sm" onClick={() => window.open(`${API_BASE}/reports/financial/pdf` + (dateParams ? `?startDate=${startDate}&endDate=${endDate}` : ""), "_blank")}>
             <Download className="mr-2 h-4 w-4" />
-            PDF
+            Board PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={() => window.open(`${API_BASE}/reports/financial/excel` + (dateParams ? `?startDate=${startDate}&endDate=${endDate}` : ""), "_blank")}>
-            <Download className="mr-2 h-4 w-4" />
-            Excel
-          </Button>
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Record Transaction
+            Single Record
           </Button>
         </div>
       </div>
@@ -199,40 +217,40 @@ export default function FinancePage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="glass">
+        <Card className="glass border-emerald-500/30">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-sm font-medium">Total Income (GH₵)</CardTitle>
+            <DollarSign className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              ${totalIncome.toLocaleString()}
+            <div className="text-2xl font-bold text-emerald-600">
+              GH₵ {totalIncome.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <p className="text-xs text-muted-foreground">Donations, Tithes & Offerings</p>
           </CardContent>
         </Card>
-        <Card className="glass">
+        <Card className="glass border-red-500/30">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Expenses (GH₵)</CardTitle>
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              ${totalExpenses.toLocaleString()}
+              GH₵ {totalExpenses.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <p className="text-xs text-muted-foreground">Ministry & Administrative Expenses</p>
           </CardContent>
         </Card>
-        <Card className="glass">
+        <Card className="glass border-primary/30">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
+            <CardTitle className="text-sm font-medium">Net Treasury Balance (GH₵)</CardTitle>
             <Wallet className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${netBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
-              ${netBalance.toLocaleString()}
+            <div className={`text-2xl font-bold ${netBalance >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+              GH₵ {netBalance.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <p className="text-xs text-muted-foreground">Available Church Funds</p>
           </CardContent>
         </Card>
       </div>
@@ -474,6 +492,65 @@ export default function FinancePage() {
         onOpenChange={setDialogOpen}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        members={members}
+      />
+
+      <Dialog open={taxDialogOpen} onOpenChange={setTaxDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Download Annual Tax Statement</DialogTitle>
+            <DialogDescription>
+              Select a member and tax year to generate an official tax-deductible contribution statement PDF.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Member</Label>
+              <Select onValueChange={(v) => setSelectedTaxMember(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((m: any) => (
+                    <SelectItem key={m.id} value={String(m.id)}>
+                      {m.firstName} {m.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tax Year</Label>
+              <Input
+                type="number"
+                value={taxYear}
+                onChange={(e) => setTaxYear(e.target.value)}
+                placeholder="2026"
+              />
+            </div>
+            <Button
+              className="w-full"
+              disabled={!selectedTaxMember}
+              onClick={() => {
+                window.open(`${API_BASE}/reports/tax-statement/member/${selectedTaxMember}?year=${taxYear}`, "_blank");
+                setTaxDialogOpen(false);
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download PDF Statement
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <PaystackGivingDialog
+        open={givingDialogOpen}
+        onOpenChange={setGivingDialogOpen}
+      />
+
+      <SundayServiceDialog
+        open={sundayDialogOpen}
+        onOpenChange={setSundayDialogOpen}
         members={members}
       />
     </div>

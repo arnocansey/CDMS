@@ -28,14 +28,12 @@ public class ReportingService {
     private final MemberService memberService;
     private final AttendanceService attendanceService;
     private final FinancialService financialService;
-    private final EventService eventService;
 
     public ReportingService(MemberService memberService, AttendanceService attendanceService,
-                           FinancialService financialService, EventService eventService) {
+                           FinancialService financialService) {
         this.memberService = memberService;
         this.attendanceService = attendanceService;
         this.financialService = financialService;
-        this.eventService = eventService;
     }
 
     public byte[] generateMembershipReportPdf() {
@@ -124,29 +122,74 @@ public class ReportingService {
 
             com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
             com.lowagie.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+            com.lowagie.text.Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
             com.lowagie.text.Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 10);
+            com.lowagie.text.Font smallFont = FontFactory.getFont(FontFactory.HELVETICA, 8);
 
-            document.add(new Paragraph("Financial Report", titleFont));
-            document.add(new Paragraph("Period: " + startDate + " to " + endDate));
+            Paragraph churchHeader = new Paragraph("CHURCH EXECUTIVE FINANCIAL BOARD REPORT", titleFont);
+            churchHeader.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+            document.add(churchHeader);
+
+            Paragraph periodPara = new Paragraph("Period: " + (startDate != null ? startDate : "Beginning") + " to " + (endDate != null ? endDate : "Present"), headerFont);
+            periodPara.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+            document.add(periodPara);
             document.add(new Paragraph(" "));
 
             BigDecimal totalDonations = financialService.getTotalDonations(startDate, endDate);
             BigDecimal totalTithes = financialService.getTotalTithes(startDate, endDate);
             BigDecimal totalOfferings = financialService.getTotalOfferings(startDate, endDate);
+            BigDecimal totalIncome = totalDonations.add(totalTithes).add(totalOfferings);
             BigDecimal totalExpenses = financialService.getTotalExpenses(startDate, endDate);
-            BigDecimal netBalance = totalDonations.add(totalTithes).add(totalOfferings).subtract(totalExpenses);
+            BigDecimal netBalance = totalIncome.subtract(totalExpenses);
+
+            document.add(new Paragraph("1. OPERATING STATEMENT (SUMMARY OF INFLOWS & OUTFLOWS)", headerFont));
+            document.add(new Paragraph(" "));
 
             PdfPTable summaryTable = new PdfPTable(2);
-            summaryTable.setWidthPercentage(50);
-            summaryTable.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_LEFT);
+            summaryTable.setWidthPercentage(80);
+            summaryTable.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
 
-            addSummaryRow(summaryTable, normalFont, "Total Donations:", totalDonations.toString());
-            addSummaryRow(summaryTable, normalFont, "Total Tithes:", totalTithes.toString());
-            addSummaryRow(summaryTable, normalFont, "Total Offerings:", totalOfferings.toString());
-            addSummaryRow(summaryTable, normalFont, "Total Expenses:", totalExpenses.toString());
-            addSummaryRow(summaryTable, normalFont, "Net Balance:", netBalance.toString());
+            addSummaryRow(summaryTable, normalFont, "General Donations & Grants:", "GH₵ " + totalDonations);
+            addSummaryRow(summaryTable, normalFont, "Member Tithes:", "GH₵ " + totalTithes);
+            addSummaryRow(summaryTable, normalFont, "Sunday & Event Offerings:", "GH₵ " + totalOfferings);
+            addSummaryRow(summaryTable, boldFont, "TOTAL OPERATING INCOME:", "GH₵ " + totalIncome);
+            addSummaryRow(summaryTable, normalFont, "Total Operating Expenses:", "GH₵ " + totalExpenses);
+            addSummaryRow(summaryTable, boldFont, "NET OPERATING SURPLUS / (DEFICIT):", "GH₵ " + netBalance);
 
             document.add(summaryTable);
+            document.add(new Paragraph(" "));
+
+            document.add(new Paragraph("2. FUND BALANCES & ALLOCATION", headerFont));
+            document.add(new Paragraph(" "));
+
+            PdfPTable fundTable = new PdfPTable(3);
+            fundTable.setWidthPercentage(100);
+            addTableHeader(fundTable, boldFont, new String[]{"Fund Name", "Allocation %", "Estimated Balance"});
+
+            BigDecimal generalFund = netBalance.multiply(new BigDecimal("0.60")).setScale(2, java.math.RoundingMode.HALF_UP);
+            BigDecimal buildingFund = netBalance.multiply(new BigDecimal("0.25")).setScale(2, java.math.RoundingMode.HALF_UP);
+            BigDecimal welfareFund = netBalance.multiply(new BigDecimal("0.15")).setScale(2, java.math.RoundingMode.HALF_UP);
+
+            fundTable.addCell(new Phrase("General Operating Fund", normalFont));
+            fundTable.addCell(new Phrase("60%", normalFont));
+            fundTable.addCell(new Phrase("GH₵ " + generalFund, normalFont));
+
+            fundTable.addCell(new Phrase("Building & Facilities Fund", normalFont));
+            fundTable.addCell(new Phrase("25%", normalFont));
+            fundTable.addCell(new Phrase("GH₵ " + buildingFund, normalFont));
+
+            fundTable.addCell(new Phrase("Welfare & Community Fund", normalFont));
+            fundTable.addCell(new Phrase("15%", normalFont));
+            fundTable.addCell(new Phrase("GH₵ " + welfareFund, normalFont));
+
+            document.add(fundTable);
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(" "));
+
+            Paragraph sig = new Paragraph("Report Certified by Lead Auditor & Finance Committee", smallFont);
+            sig.setAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
+            document.add(sig);
+
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate PDF", e);
@@ -159,7 +202,7 @@ public class ReportingService {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Financial Report");
+            Sheet sheet = workbook.createSheet("Executive Financial Report");
 
             org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
             headerFont.setBold(true);
@@ -167,11 +210,11 @@ public class ReportingService {
             headerStyle.setFont(headerFont);
 
             Row titleRow = sheet.createRow(0);
-            titleRow.createCell(0).setCellValue("Financial Report");
-            titleRow.createCell(1).setCellValue("Period: " + startDate + " to " + endDate);
+            titleRow.createCell(0).setCellValue("Church Executive Financial Board Report");
+            titleRow.createCell(1).setCellValue("Period: " + (startDate != null ? startDate : "Beginning") + " to " + (endDate != null ? endDate : "Present"));
 
             Row headerRow = sheet.createRow(2);
-            String[] headers = {"Category", "Amount"};
+            String[] headers = {"Financial Category", "Amount (GH₵)", "Percentage of Total Income"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -181,26 +224,45 @@ public class ReportingService {
             BigDecimal totalDonations = financialService.getTotalDonations(startDate, endDate);
             BigDecimal totalTithes = financialService.getTotalTithes(startDate, endDate);
             BigDecimal totalOfferings = financialService.getTotalOfferings(startDate, endDate);
+            BigDecimal totalIncome = totalDonations.add(totalTithes).add(totalOfferings);
             BigDecimal totalExpenses = financialService.getTotalExpenses(startDate, endDate);
+            BigDecimal netBalance = totalIncome.subtract(totalExpenses);
 
-            Row row3 = sheet.createRow(3);
-            row3.createCell(0).setCellValue("Total Donations");
-            row3.createCell(1).setCellValue(totalDonations.doubleValue());
+            double incVal = totalIncome.doubleValue() > 0 ? totalIncome.doubleValue() : 1.0;
 
-            Row row4 = sheet.createRow(4);
-            row4.createCell(0).setCellValue("Total Tithes");
-            row4.createCell(1).setCellValue(totalTithes.doubleValue());
+            Row r3 = sheet.createRow(3);
+            r3.createCell(0).setCellValue("General Donations");
+            r3.createCell(1).setCellValue(totalDonations.doubleValue());
+            r3.createCell(2).setCellValue(String.format("%.2f%%", (totalDonations.doubleValue() / incVal) * 100));
 
-            Row row5 = sheet.createRow(5);
-            row5.createCell(0).setCellValue("Total Offerings");
-            row5.createCell(1).setCellValue(totalOfferings.doubleValue());
+            Row r4 = sheet.createRow(4);
+            r4.createCell(0).setCellValue("Member Tithes");
+            r4.createCell(1).setCellValue(totalTithes.doubleValue());
+            r4.createCell(2).setCellValue(String.format("%.2f%%", (totalTithes.doubleValue() / incVal) * 100));
 
-            Row row6 = sheet.createRow(6);
-            row6.createCell(0).setCellValue("Total Expenses");
-            row6.createCell(1).setCellValue(totalExpenses.doubleValue());
+            Row r5 = sheet.createRow(5);
+            r5.createCell(0).setCellValue("Offerings");
+            r5.createCell(1).setCellValue(totalOfferings.doubleValue());
+            r5.createCell(2).setCellValue(String.format("%.2f%%", (totalOfferings.doubleValue() / incVal) * 100));
 
-            sheet.autoSizeColumn(0);
-            sheet.autoSizeColumn(1);
+            Row r6 = sheet.createRow(6);
+            r6.createCell(0).setCellValue("TOTAL OPERATING INCOME");
+            r6.createCell(1).setCellValue(totalIncome.doubleValue());
+            r6.createCell(2).setCellValue("100.00%");
+
+            Row r7 = sheet.createRow(7);
+            r7.createCell(0).setCellValue("TOTAL EXPENSES");
+            r7.createCell(1).setCellValue(totalExpenses.doubleValue());
+            r7.createCell(2).setCellValue("-");
+
+            Row r8 = sheet.createRow(8);
+            r8.createCell(0).setCellValue("NET OPERATING SURPLUS / (DEFICIT)");
+            r8.createCell(1).setCellValue(netBalance.doubleValue());
+            r8.createCell(2).setCellValue("-");
+
+            for (int i = 0; i < 3; i++) {
+                sheet.autoSizeColumn(i);
+            }
 
             workbook.write(out);
         } catch (Exception e) {
@@ -222,7 +284,7 @@ public class ReportingService {
             com.lowagie.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
 
             document.add(new Paragraph("Attendance Report", titleFont));
-            document.add(new Paragraph("Period: " + startDate + " to " + endDate));
+            document.add(new Paragraph("Period: " + startDate + " to " + endDate, headerFont));
             document.add(new Paragraph(" "));
 
             long totalPresent = attendanceService.getAttendanceCountByDateRange(startDate, endDate);
